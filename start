@@ -1,0 +1,50 @@
+#!/bin/bash
+trap "echo -ne '\nstopping container...' && docker stop refinery-tokenizer > /dev/null 2>&1 && echo -ne '\t\t [done]\n'" EXIT
+
+
+source check_config_service
+
+HIDE_BUILD=0
+while getopts :s flag
+do
+    case "${flag}" in
+        s) HIDE_BUILD=1;;
+    esac
+done
+
+HOST_IP=$(docker network inspect bridge --format='{{json .IPAM.Config}}' | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | tail -1)
+
+echo -ne 'stopping old container...'
+if [ $HIDE_BUILD -eq 1 ]
+then
+  docker stop refinery-tokenizer > /dev/null 2>&1
+else
+  docker stop refinery-tokenizer
+fi
+echo -ne '\t\t [done]\n'
+
+
+echo -ne 'building container...'
+if [ $HIDE_BUILD -eq 1 ]
+then
+  docker build -t refinery-tokenizer-dev -f dev.Dockerfile . > /dev/null 2>&1
+else
+  docker build -t refinery-tokenizer-dev -f dev.Dockerfile .
+fi
+echo -ne '\t\t [done]\n'
+
+echo -ne 'starting...'
+docker run -d --rm \
+--name refinery-tokenizer \
+-p 7061:80 \
+-e S3_ENDPOINT_LOCAL=object-storage:9000 \
+-e S3_ACCESS_KEY=onetask \
+-e S3_SECRET_KEY=r6ywtR33!DMlaL*SUUdy \
+-e WS_NOTIFY_ENDPOINT=http://refinery-websocket:8080 \
+-e POSTGRES=postgresql://postgres:onetask@graphql-postgres:5432 \
+--mount type=bind,source="$(pwd)"/,target=/app \
+-v /var/run/docker.sock:/var/run/docker.sock \
+--network dev-setup_default \
+refinery-tokenizer-dev > /dev/null 2>&1
+echo -ne '\t\t\t [done]\n'
+docker logs -f refinery-tokenizer

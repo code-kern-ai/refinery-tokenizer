@@ -1,0 +1,7 @@
+
+[submodule "submodules/model"]
+	path = submodules/model
+	url = https://github.com/code-kern-ai/refinery-submodule-model.git
+[submodule "submodules/s3"]
+	path = submodules/s3
+	url = https://github.com/code-kern-ai/refinery-submodule-s3.git

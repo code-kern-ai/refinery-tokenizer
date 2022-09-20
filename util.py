@@ -1,4 +1,3 @@
-import spacy
 from spacy.language import Language
 from spacy.tokens import DocBin, Doc
 from spacy.vocab import Vocab
@@ -13,10 +12,10 @@ from notification import (
     send_notification_created,
 )
 from submodules.model import (
-    RecordTokenizationTask,
     RecordTokenized,
     RecordAttributeTokenStatistics,
 )
+from submodules.model.enums import AttributeState
 from submodules.model.business_objects import (
     project,
     attribute,
@@ -235,7 +234,14 @@ def create_rats_entries(
             text_attribute = attribute.get(project_id, attribute_id)
             text_attributes = {text_attribute.name: text_attribute.id}
         else:
-            text_attributes = attribute.get_text_attributes(project_id)
+            text_attributes = attribute.get_text_attributes(
+                project_id,
+                state_filter=[
+                    AttributeState.UPLOADED.value,
+                    AttributeState.USABLE.value,
+                    AttributeState.RUNNING.value,
+                ],
+            )
         vocab = get_tokenizer_by_project(project_id).vocab
         record_set = record.get_missing_rats_records(project_id, 100, attribute_id)
         chunk = 0
@@ -350,7 +356,14 @@ def tokenize_record(project_id: str, record_id: str) -> int:
         if record_id not in __prioritized_records[project_id]:
             __prioritized_records[project_id][record_id] = True
 
-        text_attributes = attribute.get_text_attributes(project_id)
+        text_attributes = attribute.get_text_attributes(
+            project_id,
+            state_filter=[
+                AttributeState.UPLOADED.value,
+                AttributeState.USABLE.value,
+                AttributeState.RUNNING.value,
+            ],
+        )
         tokenizer = get_tokenizer_by_project(project_id)
         record_item = record.get(project_id, record_id)
         columns = []

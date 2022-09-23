@@ -1,3 +1,4 @@
+import time
 from spacy.language import Language
 from spacy.tokens import DocBin, Doc
 from spacy.vocab import Vocab
@@ -230,6 +231,13 @@ def create_rats_entries(
             project_id, False, ["rats", "state", str(tokenization_task.state)]
         )
         general.commit()
+        i = 0
+        while initial_count > record.count_tokenized_records(project_id):
+            if i > 9:
+                print("Docbins missing", flush=True)
+                raise Exception("Docbins missing")
+            time.sleep(1)
+            i += 1
         if attribute_id:
             text_attribute = attribute.get(project_id, attribute_id)
             text_attributes = {text_attribute.name: text_attribute.id}

@@ -16,7 +16,7 @@ from submodules.model import (
     RecordTokenized,
     RecordAttributeTokenStatistics,
 )
-from submodules.model.enums import AttributeState
+from submodules.model.enums import AttributeState, DataTypes
 from submodules.model.business_objects import (
     project,
     attribute,
@@ -85,7 +85,7 @@ def tokenize_project(
                         del __prioritized_records[project_id][record_item.id]
                         continue
                 bytes, columns, missing_columns = __get_docbin_and_columns(
-                    tokenizer, record_item
+                    project_id, tokenizer, record_item
                 )
                 # missing_columns = tmp
                 entries.append(
@@ -339,13 +339,17 @@ def __get_docs_from_db(project_id: str, record_id: str, vocab: Vocab) -> Dict[st
 
 
 def __get_docbin_and_columns(
-    tokenizer: Language, record: Any
+    project_id: str, tokenizer: Language, record: Any
 ) -> Tuple[bytes, List[str], List[str]]:
     columns = []
     missing_columns = []
     doc_bin = DocBin()
     for key in record.data:
-        if isinstance(record.data[key], str):
+        attribute_item = attribute.get_by_name(project_id, key)
+        if (
+            isinstance(record.data[key], str)
+            and attribute_item.data_type == DataTypes.TEXT.value
+        ):
             doc = tokenizer(record.data[key])
             doc_bin.add(doc)
             columns.append(key)

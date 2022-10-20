@@ -1,10 +1,10 @@
-FROM python:3.10-slim
+FROM kernai/refinery-parent-images:v0.0.1-common
 
 WORKDIR /program
 
 COPY requirements.txt .
 
-RUN pip3 install -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 RUN python -m spacy download en_core_web_sm
 RUN python -m spacy download de_core_news_sm
 

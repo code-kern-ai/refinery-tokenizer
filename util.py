@@ -387,7 +387,7 @@ def tokenize_record(project_id: str, record_id: str) -> int:
                 columns.append(key)
                 if text_attributes and key in text_attributes:
                     record.create_or_update_token_statistic(
-                        project_id, record_id, str(text_attributes[key].id), len(doc)
+                        project_id, record_id, text_attributes[key], len(doc)
                     )
 
         doc_bin_byte = doc_bin.to_bytes()

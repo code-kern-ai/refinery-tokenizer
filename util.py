@@ -359,6 +359,20 @@ def __get_docbin_and_columns(
     return doc_bin.to_bytes(), columns, missing_columns
 
 
+def reupload_docbins(project_id: str):
+    missing_columns = attribute.get_non_text_attributes(
+        project_id,
+        state_filter=[
+            AttributeState.UPLOADED.value,
+            AttributeState.USABLE.value,
+            AttributeState.AUTOMATICALLY_CREATED.value,
+            AttributeState.RUNNING.value,
+        ],
+    ).keys()
+    __put_data_in_minio_bucket(project_id, missing_columns)
+    return 200
+
+
 def tokenize_record(project_id: str, record_id: str) -> int:
     if record.has_byte_data(project_id, record_id):
         return 200

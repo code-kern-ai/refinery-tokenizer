@@ -21,6 +21,10 @@ class RatsRequest(BaseModel):
     attribute_id: str
 
 
+class ReuploadDocbins(BaseModel):
+    project_id: str
+
+
 @app.post("/tokenize_record")
 def tokenize_record(request: Request) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
@@ -51,6 +55,14 @@ def create_rats(request: RatsRequest) -> Tuple[int, str]:
 def tokenize_project_no_use(project_id: str) -> int:
     user_id = util.get_migration_user()
     return util.start_tokenization_task(project_id, user_id)
+
+
+@app.post("/reupload_docbins")
+def reupload_docbins(request: ReuploadDocbins) -> Tuple[int, str]:
+    session_token = general.get_ctx_token()
+    value = util.reupload_docbins(request.project_id)
+    general.remove_and_refresh_session(session_token)
+    return value, ""
 
 
 @app.exception_handler(Exception)

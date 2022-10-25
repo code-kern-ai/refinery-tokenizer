@@ -16,7 +16,7 @@ from submodules.model import (
     RecordTokenized,
     RecordAttributeTokenStatistics,
 )
-from submodules.model.enums import AttributeState
+from submodules.model.enums import AttributeState, DataTypes
 from submodules.model.business_objects import (
     project,
     attribute,
@@ -85,7 +85,7 @@ def tokenize_project(
                         del __prioritized_records[project_id][record_item.id]
                         continue
                 bytes, columns, missing_columns = __get_docbin_and_columns(
-                    tokenizer, record_item
+                    project_id, tokenizer, record_item
                 )
                 # missing_columns = tmp
                 entries.append(
@@ -339,13 +339,17 @@ def __get_docs_from_db(project_id: str, record_id: str, vocab: Vocab) -> Dict[st
 
 
 def __get_docbin_and_columns(
-    tokenizer: Language, record: Any
+    project_id: str, tokenizer: Language, record: Any
 ) -> Tuple[bytes, List[str], List[str]]:
     columns = []
     missing_columns = []
     doc_bin = DocBin()
     for key in record.data:
-        if isinstance(record.data[key], str):
+        attribute_item = attribute.get_by_name(project_id, key)
+        if (
+            isinstance(record.data[key], str)
+            and attribute_item.data_type == DataTypes.TEXT.value
+        ):
             doc = tokenizer(record.data[key])
             doc_bin.add(doc)
             columns.append(key)
@@ -353,6 +357,20 @@ def __get_docbin_and_columns(
             missing_columns.append(key)
 
     return doc_bin.to_bytes(), columns, missing_columns
+
+
+def reupload_docbins(project_id: str):
+    missing_columns = attribute.get_non_text_attributes(
+        project_id,
+        state_filter=[
+            AttributeState.UPLOADED.value,
+            AttributeState.USABLE.value,
+            AttributeState.AUTOMATICALLY_CREATED.value,
+            AttributeState.RUNNING.value,
+        ],
+    ).keys()
+    __put_data_in_minio_bucket(project_id, missing_columns)
+    return 200
 
 
 def tokenize_record(project_id: str, record_id: str) -> int:
@@ -383,7 +401,7 @@ def tokenize_record(project_id: str, record_id: str) -> int:
                 columns.append(key)
                 if text_attributes and key in text_attributes:
                     record.create_or_update_token_statistic(
-                        project_id, record_id, str(text_attributes[key].id), len(doc)
+                        project_id, record_id, text_attributes[key], len(doc)
                     )
 
         doc_bin_byte = doc_bin.to_bytes()

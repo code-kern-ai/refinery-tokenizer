@@ -1,0 +1,2 @@
+-r common-requirements.txt
+spacy==3.4.2

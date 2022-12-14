@@ -34,42 +34,6 @@ from tokenizer_handler import get_tokenizer_by_project
 __prioritized_records = {}
 
 
-def start_tokenization_task(project_id: str, user_id: str) -> int:
-    # as thread so the prioritization of single records works
-    text_attribute_ids_by_name = attribute.get_text_attributes(project_id)
-    attribute_names_string = get_attribute_names_string(
-        text_attribute_ids_by_name.keys()
-    )
-    initial_count = record.count_missing_tokenized_records(
-        project_id, attribute_names_string
-    )
-    if initial_count != 0:
-        notification.create(
-            project_id,
-            user_id,
-            "Started tokenization.",
-            "INFO",
-            enums.NotificationType.TOKEN_CREATION_STARTED.value,
-        )
-        general.commit()
-        send_notification_created(project_id, user_id, False)
-        task = tokenization.create_tokenization_task(
-            project_id, user_id, with_commit=True
-        )
-        daemon.run(
-            tokenize_project,
-            project_id,
-            user_id,
-            str(task.id),
-            initial_count,
-            attribute_names_string,
-            text_attribute_ids_by_name,
-        )
-    else:
-        start_rats_task(project_id, user_id)
-    return 200
-
-
 def get_attribute_names_string(attribute_names: List[str]) -> str:
     attribute_names = [f'"{name}"' for name in attribute_names]
     attribute_names = ",".join(attribute_names)
@@ -191,6 +155,15 @@ def tokenize_project(
             print("Stopping since no project existst to complete the task", flush=True)
 
     general.remove_and_refresh_session(session_token, False)
+
+
+def put_data_in_minio_bucket(project_id: str, missing_columns: List[str]) -> None:
+    missing_columns_str = ",\n".join(
+        ["'" + k + "',r.data->'" + k + "'" for k in missing_columns]
+    )
+    org_id = organization.get_id_by_project_id(project_id)
+    data = tokenization.get_doc_bin_table_to_json(project_id, missing_columns_str)
+    s3.upload_tokenizer_data(org_id, project_id, data)
 
 
 def __put_data_in_minio_bucket(project_id: str, missing_columns: List[str]) -> None:

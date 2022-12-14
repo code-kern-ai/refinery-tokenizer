@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Tuple
 import util
+import manager
 from submodules.model.business_objects import general
 import config_handler
 
@@ -36,7 +37,7 @@ def tokenize_record(request: Request) -> Tuple[int, str]:
 @app.post("/tokenize_project")
 def tokenize_project(request: Request) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
-    value = util.start_tokenization_task(request.project_id, request.user_id)
+    value = manager.start_tokenization_task(request.project_id, request.user_id)
     general.remove_and_refresh_session(session_token)
     return value, ""
 

@@ -36,7 +36,13 @@ __prioritized_records = {}
 
 def start_tokenization_task(project_id: str, user_id: str) -> int:
     # as thread so the prioritization of single records works
-    initial_count = record.count_missing_tokenized_records(project_id)
+    text_attribute_ids_by_name = attribute.get_text_attributes(project_id)
+    attribute_names_string = get_attribute_names_string(
+        text_attribute_ids_by_name.keys()
+    )
+    initial_count = record.count_missing_tokenized_records(
+        project_id, attribute_names_string
+    )
     if initial_count != 0:
         notification.create(
             project_id,
@@ -50,10 +56,24 @@ def start_tokenization_task(project_id: str, user_id: str) -> int:
         task = tokenization.create_tokenization_task(
             project_id, user_id, with_commit=True
         )
-        daemon.run(tokenize_project, project_id, user_id, str(task.id), initial_count)
+        daemon.run(
+            tokenize_project,
+            project_id,
+            user_id,
+            str(task.id),
+            initial_count,
+            attribute_names_string,
+            text_attribute_ids_by_name,
+        )
     else:
         start_rats_task(project_id, user_id)
     return 200
+
+
+def get_attribute_names_string(attribute_names: List[str]) -> str:
+    attribute_names = [f'"{name}"' for name in attribute_names]
+    attribute_names = ",".join(attribute_names)
+    return "{" + attribute_names + "}"
 
 
 def tokenize_project(
@@ -61,6 +81,8 @@ def tokenize_project(
     user_id: str,
     task_id: str,
     initial_count: int,
+    attribute_names_string: str,
+    text_attribute_ids_by_name: Dict[str, str],
 ) -> None:
     try:
 
@@ -73,7 +95,9 @@ def tokenize_project(
             project_id, False, ["docbin", "state", str(tokenization_task.state)]
         )
         general.commit()
-        record_set = record.get_missing_tokenized_records(project_id, 100)
+        record_set = record.get_missing_tokenized_records(
+            project_id, 100, attribute_names_string
+        )
         chunk = 0
         missing_columns = []
         while record_set:
@@ -118,7 +142,9 @@ def tokenize_project(
                 # ensure session isn't used up to refresh ocasionally
                 session_token = general.remove_and_refresh_session(session_token, True)
                 tokenization_task = tokenization.get(project_id, task_id)
-            current_count = record.count_missing_tokenized_records(project_id)
+            current_count = record.count_missing_tokenized_records(
+                project_id, attribute_names_string
+            )
             tokenization_task.progress = round(1 - current_count / initial_count, 4)
             send_websocket_update(
                 project_id,
@@ -126,7 +152,9 @@ def tokenize_project(
                 ["docbin", "progress", str(tokenization_task.progress)],
             )
             general.commit()
-            record_set = record.get_missing_tokenized_records(project_id, 100)
+            record_set = record.get_missing_tokenized_records(
+                project_id, 100, attribute_names_string
+            )
             chunk += 1
         # after everything is inserted ensure we only have the values once
         tokenization.delete_dublicated_tokenization(project_id)
@@ -357,6 +385,57 @@ def __get_docbin_and_columns(
             missing_columns.append(key)
 
     return doc_bin.to_bytes(), columns, missing_columns
+
+
+def __get_docbin_and_columns_new(
+    project_id: str,
+    tokenizer: Language,
+    record: Any,
+    record_tokenized_columns,
+    text_attribute_names,
+) -> Tuple[bytes, List[str], List[str]]:
+
+    create_new = False
+    columns_to_create = []
+
+    if len(record_tokenized_columns) == 0:
+        create_new = True
+    else:
+        for idx, text_attribute in enumerate(text_attribute_names):
+            try:
+                if record_tokenized_columns[idx] != text_attribute:
+                    create_new = True
+                    break
+            except IndexError:
+                columns_to_create.append(text_attribute)
+
+    if create_new:
+        create_new_docbin(project_id, tokenizer, record)
+    else:
+        append_columns_to_docbin(columns_to_create)
+
+
+def create_new_docbin(project_id, tokenizer, record):
+    columns = []
+    missing_columns = []
+    doc_bin = DocBin()
+    for key in record.data:
+        attribute_item = attribute.get_by_name(project_id, key)
+        if (
+            isinstance(record.data[key], str)
+            and attribute_item.data_type == DataTypes.TEXT.value
+        ):
+            doc = tokenizer(record.data[key])
+            doc_bin.add(doc)
+            columns.append(key)
+        else:
+            missing_columns.append(key)
+
+    return doc_bin.to_bytes(), columns, missing_columns
+
+
+def append_columns_to_docbin(columns_to_create):
+    pass
 
 
 def reupload_docbins(project_id: str):

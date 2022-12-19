@@ -2,10 +2,12 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Tuple
-import util
-import manager
+
+
+from controller import task_manager, tokenization_manager
+from misc import util
+from handler import config_handler
 from submodules.model.business_objects import general
-import config_handler
 
 app = FastAPI()
 
@@ -14,6 +16,12 @@ class Request(BaseModel):
     project_id: str
     record_id: str
     user_id: str
+
+
+class AttributeTokenizationRequest(BaseModel):
+    project_id: str
+    user_id: str
+    attribute_name: str
 
 
 class RatsRequest(BaseModel):
@@ -29,7 +37,19 @@ class ReuploadDocbins(BaseModel):
 @app.post("/tokenize_record")
 def tokenize_record(request: Request) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
-    value = util.tokenize_record(request.project_id, request.record_id)
+    value = tokenization_manager.manage_record_tokenization(
+        request.project_id, request.record_id
+    )
+    general.remove_and_refresh_session(session_token)
+    return value, ""
+
+
+@app.post("/tokenize_calculated_attribute")
+def tokenize_record(request: AttributeTokenizationRequest) -> Tuple[int, str]:
+    session_token = general.get_ctx_token()
+    value = task_manager.start_tokenization_task(
+        request.project_id, request.user_id, "ATTRIBUTE", request.attribute_name
+    )
     general.remove_and_refresh_session(session_token)
     return value, ""
 
@@ -37,7 +57,9 @@ def tokenize_record(request: Request) -> Tuple[int, str]:
 @app.post("/tokenize_project")
 def tokenize_project(request: Request) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
-    value = manager.start_tokenization_task(request.project_id, request.user_id)
+    value = task_manager.start_tokenization_task(
+        request.project_id, request.user_id, "PROJECT"
+    )
     general.remove_and_refresh_session(session_token)
     return value, ""
 
@@ -47,7 +69,9 @@ def tokenize_project(request: Request) -> Tuple[int, str]:
 def create_rats(request: RatsRequest) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
     attribute_id = request.attribute_id if request.attribute_id != "" else None
-    value = util.start_rats_task(request.project_id, request.user_id, attribute_id)
+    value = task_manager.start_rats_task(
+        request.project_id, request.user_id, attribute_id
+    )
     general.remove_and_refresh_session(session_token)
     return value, ""
 

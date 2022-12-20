@@ -10,7 +10,7 @@ def get_doc_bin_in_bytes(
     record_item: Record,
     text_attributes: List[str],
     update_statistic: bool = False,
-):
+) -> Dict[str, Any]:
     doc_bin = DocBin()
     attribute_names_ordered = []
     for key in record_item.data:
@@ -49,7 +49,7 @@ def tokenize_record(
     record: Record,
     text_attributes: List[str],
     update_statistic: bool = False,
-):
+) -> RecordTokenized:
     tokenization_result = get_doc_bin_in_bytes(
         project_id, tokenizer, record, text_attributes, update_statistic
     )

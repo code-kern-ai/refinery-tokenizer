@@ -29,7 +29,7 @@ def set_up_tokenization_task(
 
 
 def start_tokenization_task(
-    project_id: str, user_id: str, type: str, attribute_name=None
+    project_id: str, user_id: str, type: str, attribute_name: Optional[str] = None
 ) -> int:
 
     initial_count = record.get_count_all_records(project_id)

@@ -1,6 +1,8 @@
 import time
 import traceback
 from datetime import datetime
+from typing import Optional
+
 from misc import daemon
 from submodules.model import enums
 from misc.notification import (
@@ -23,7 +25,9 @@ from misc.util import get_docs_from_db, send_websocket_update
 from submodules.model.models import RecordTokenizationTask
 
 
-def trigger_rats_creation(project_id: str, user_id: str, attribute_id=None) -> None:
+def trigger_rats_creation(
+    project_id: str, user_id: str, attribute_id: Optional[str] = None
+) -> None:
     initial_count = record.count_missing_rats_records(project_id, attribute_id)
     task = tokenization.create_tokenization_task(
         project_id,

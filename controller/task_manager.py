@@ -32,8 +32,8 @@ def start_tokenization_task(
     project_id: str, user_id: str, type: str, attribute_name: Optional[str] = None
 ) -> int:
 
-    initial_count = record.get_count_all_records(project_id)
     if type == "PROJECT":
+        initial_count = record.count_records_without_tokenization(project_id)
         if initial_count != 0:
             task = set_up_tokenization_task(
                 project_id,
@@ -50,6 +50,7 @@ def start_tokenization_task(
             start_rats_task(project_id, user_id)
 
     elif type == "ATTRIBUTE":
+        initial_count = record.get_count_all_records(project_id)
         task = set_up_tokenization_task(
             project_id,
             user_id,

@@ -77,11 +77,11 @@ def manage_initial_project_tokenization(
         text_attributes = attribute.get_text_attributes(project_id).keys()
         non_text_attributes = attribute.get_non_text_attributes(project_id).keys()
 
-        full_count = record.get_count_all_records(project_id)
+        full_count = record.count_records_without_tokenization(project_id)
         chunk_size, progress_per_chunk = __get_chunk_size_and_progress_per_chunk(
             full_count
         )
-        records = record.get_all(project_id)
+        records = record.get_records_without_tokenization(project_id)
         chunks = [
             records[x : x + chunk_size] for x in range(0, len(records), chunk_size)
         ]
@@ -176,7 +176,11 @@ def __set_up_tokenization(
 
 
 def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
-    general.rollback()
+    try:
+        general.rollback()
+    except Exception:
+        session_token = general.get_ctx_token()
+        general.remove_and_refresh_session(session_token, True)
     tokenization_task = tokenization.get(project_id, task_id)
     if project.get(project_id):
         print(traceback.format_exc(), flush=True)

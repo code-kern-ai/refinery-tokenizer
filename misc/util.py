@@ -53,7 +53,7 @@ def get_docs_from_db(project_id: str, record_id: str, vocab: Vocab) -> Dict[str,
     return doc_dict
 
 
-def reupload_docbins(project_id: str):
+def reupload_docbins(project_id: str) -> int:
     missing_columns = attribute.get_non_text_attributes(
         project_id,
         state_filter=[
@@ -80,6 +80,8 @@ def send_websocket_update(
         send_project_update(project_id, f"tokenization:{':'.join(arguments)}")
 
 
-def upload_to_minio_after_every_10th_chunk(chunk, project_id, non_text_attributes):
+def upload_to_minio_after_every_10th_chunk(
+    chunk: int, project_id: str, non_text_attributes: List[str]
+) -> None:
     if chunk % 10 == 0:
         put_data_in_minio_bucket(project_id, non_text_attributes)

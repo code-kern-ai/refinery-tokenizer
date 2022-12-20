@@ -20,6 +20,7 @@ from submodules.model.business_objects import (
 )
 from handler.tokenizer_handler import get_tokenizer_by_project
 from misc.util import get_docs_from_db, send_websocket_update
+from submodules.model.models import RecordTokenizationTask
 
 
 def trigger_rats_creation(project_id: str, user_id: str, attribute_id=None) -> None:
@@ -53,13 +54,9 @@ def create_rats_entries(
         # project was deleted in the meantime
         return
     try:
-        tokenization_task = tokenization.get(project_id, task_id)
-        tokenization_task.workload = initial_count
-        tokenization_task.state = enums.TokenizerTask.STATE_IN_PROGRESS.value
-        send_websocket_update(
-            project_id, False, ["rats", "state", str(tokenization_task.state)]
+        tokenization_task = __set_up_statistic_calculation(
+            project_id, task_id, initial_count
         )
-        general.commit()
         i = 0
         while initial_count > record.count_tokenized_records(project_id):
             if i > 9:
@@ -107,48 +104,84 @@ def create_rats_entries(
                 # ensure session isn't used up to refresh ocasionally
                 session_token = general.remove_and_refresh_session(session_token, True)
                 tokenization_task = tokenization.get(project_id, task_id)
-            current_count = record.count_missing_rats_records(project_id, attribute_id)
-            tokenization_task.progress = round(1 - current_count / initial_count, 4)
-            send_websocket_update(
-                project_id, True, ["rats", "progress", str(tokenization_task.progress)]
-            )
-            general.commit()
+                __update_progress(
+                    project_id, attribute_id, tokenization_task, initial_count
+                )
             record_set = record.get_missing_rats_records(project_id, 100, attribute_id)
             chunk += 1
-        # after everything is inserted ensure we only have the values once
-        record.delete_duplicated_rats()
-        tokenization_task.progress = 1
-        send_websocket_update(
-            project_id, False, ["rats", "progress", str(tokenization_task.progress)]
-        )
-        tokenization_task.state = enums.TokenizerTask.STATE_FINISHED.value
-        send_websocket_update(
-            project_id, False, ["rats", "state", str(tokenization_task.state)]
-        )
-        tokenization_task.finished_at = datetime.now()
-        notification.create(
-            project_id,
-            user_id,
-            "Completed tokenization.",
-            "SUCCESS",
-            enums.NotificationType.TOKEN_CREATION_DONE.value,
-        )
-        general.commit()
-        send_notification_created(project_id, user_id, False)
+        __finalize_statistic_calculation(project_id, user_id, tokenization_task)
     except Exception:
-        general.rollback()
-        print(traceback.format_exc(), flush=True)
-        tokenization_task.state = enums.TokenizerTask.STATE_FAILED.value
-        send_websocket_update(
-            project_id, False, ["rats", "state", str(tokenization_task.state)]
-        )
-        notification.create(
-            project_id,
-            user_id,
-            "An error occured during token statistic calculation. Please contact the support.",
-            "ERROR",
-            enums.NotificationType.TOKEN_CREATION_FAILED.value,
-        )
-        general.commit()
-        send_notification_created(project_id, user_id, False)
-    general.remove_and_refresh_session(session_token, False)
+        __handle_error(project_id, user_id, tokenization_task)
+    finally:
+        general.remove_and_refresh_session(session_token, False)
+
+
+def __set_up_statistic_calculation(
+    project_id: str, task_id: str, initial_count: int
+) -> RecordTokenizationTask:
+    tokenization_task = tokenization.get(project_id, task_id)
+    tokenization_task.workload = initial_count
+    tokenization_task.state = enums.TokenizerTask.STATE_IN_PROGRESS.value
+    send_websocket_update(
+        project_id, False, ["rats", "state", str(tokenization_task.state)]
+    )
+    general.commit()
+    return tokenization_task
+
+
+def __update_progress(
+    project_id: str,
+    attribute_id: str,
+    tokenization_task: RecordTokenizationTask,
+    initial_count: int,
+) -> None:
+    current_count = record.count_missing_rats_records(project_id, attribute_id)
+    tokenization_task.progress = round(1 - current_count / initial_count, 4)
+    send_websocket_update(
+        project_id, True, ["rats", "progress", str(tokenization_task.progress)]
+    )
+    general.commit()
+
+
+def __finalize_statistic_calculation(
+    project_id: str, user_id: str, tokenization_task: RecordTokenizationTask
+) -> None:
+    record.delete_duplicated_rats()
+    tokenization_task.progress = 1
+    send_websocket_update(
+        project_id, False, ["rats", "progress", str(tokenization_task.progress)]
+    )
+    tokenization_task.state = enums.TokenizerTask.STATE_FINISHED.value
+    send_websocket_update(
+        project_id, False, ["rats", "state", str(tokenization_task.state)]
+    )
+    tokenization_task.finished_at = datetime.now()
+    notification.create(
+        project_id,
+        user_id,
+        "Completed tokenization.",
+        "SUCCESS",
+        enums.NotificationType.TOKEN_CREATION_DONE.value,
+    )
+    general.commit()
+    send_notification_created(project_id, user_id, False)
+
+
+def __handle_error(
+    project_id: str, user_id: str, tokenization_task: RecordTokenizationTask
+) -> None:
+    general.rollback()
+    print(traceback.format_exc(), flush=True)
+    tokenization_task.state = enums.TokenizerTask.STATE_FAILED.value
+    send_websocket_update(
+        project_id, False, ["rats", "state", str(tokenization_task.state)]
+    )
+    notification.create(
+        project_id,
+        user_id,
+        "An error occured during token statistic calculation. Please contact the support.",
+        "ERROR",
+        enums.NotificationType.TOKEN_CREATION_FAILED.value,
+    )
+    general.commit()
+    send_notification_created(project_id, user_id, False)

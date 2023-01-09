@@ -6,7 +6,12 @@ from typing import Tuple
 from controller import task_manager, tokenization_manager
 from misc import util
 from handler import config_handler
-from request_classes import AttributeTokenizationRequest, RatsRequest, Request, ReuploadDocbins
+from request_classes import (
+    AttributeTokenizationRequest,
+    RatsRequest,
+    Request,
+    ReuploadDocbins,
+)
 from submodules.model.business_objects import general
 from submodules.model import enums
 
@@ -16,31 +21,32 @@ app = FastAPI()
 @app.post("/tokenize_record")
 def tokenize_record(request: Request) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
-    value = tokenization_manager.tokenize_record(
-        request.project_id, request.record_id
-    )
+    tokenization_manager.tokenize_record(request.project_id, request.record_id)
     general.remove_and_refresh_session(session_token)
-    return value, ""
+    return 200, ""
 
 
 @app.post("/tokenize_calculated_attribute")
 def tokenize_record(request: AttributeTokenizationRequest) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
-    value = task_manager.start_tokenization_task(
-        request.project_id, request.user_id, enums.TokenizationTaskTypes.ATTRIBUTE.value, request.attribute_name
+    task_manager.start_tokenization_task(
+        request.project_id,
+        request.user_id,
+        enums.TokenizationTaskTypes.ATTRIBUTE.value,
+        request.attribute_name,
     )
     general.remove_and_refresh_session(session_token)
-    return value, ""
+    return 200, ""
 
 
 @app.post("/tokenize_project")
 def tokenize_project(request: Request) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
-    value = task_manager.start_tokenization_task(
+    task_manager.start_tokenization_task(
         request.project_id, request.user_id, enums.TokenizationTaskTypes.PROJECT.value
     )
     general.remove_and_refresh_session(session_token)
-    return value, ""
+    return 200, ""
 
 
 # rats = record_attribute_token_statistics
@@ -48,11 +54,9 @@ def tokenize_project(request: Request) -> Tuple[int, str]:
 def create_rats(request: RatsRequest) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
     attribute_id = request.attribute_id if request.attribute_id != "" else None
-    value = task_manager.start_rats_task(
-        request.project_id, request.user_id, attribute_id
-    )
+    task_manager.start_rats_task(request.project_id, request.user_id, attribute_id)
     general.remove_and_refresh_session(session_token)
-    return value, ""
+    return 200, ""
 
 
 @app.put("/tokenize_project_for_migration/{project_id}")
@@ -64,9 +68,9 @@ def tokenize_project_no_use(project_id: str) -> int:
 @app.post("/reupload_docbins")
 def reupload_docbins(request: ReuploadDocbins) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
-    value = util.reupload_docbins(request.project_id)
+    util.reupload_docbins(request.project_id)
     general.remove_and_refresh_session(session_token)
-    return value, ""
+    return 200, ""
 
 
 @app.exception_handler(Exception)

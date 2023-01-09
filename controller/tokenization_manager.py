@@ -46,9 +46,12 @@ def tokenize_calculated_attribute(
             for x in range(0, len(record_tokenized_entries), chunk_size)
         ]
         for idx, chunk in enumerate(chunks):
-            values = []
-            for record_tokenized_item in chunk:
-                values.append(add_attribute_to_docbin(tokenizer, record_tokenized_item))
+            values = [
+                (
+                    add_attribute_to_docbin(tokenizer, record_tokenized_item)
+                    for record_tokenized_item in chunk
+                )
+            ]
 
             record.update_bytes_of_record_tokenized(values)
             rt_ids_string_for_update = __get_value_ids_string_for_update(values)
@@ -134,7 +137,7 @@ def tokenize_record(project_id: str, record_id: str) -> int:
 
 
 def __get_value_ids_string_for_update(values: List[Dict[str, Any]]) -> str:
-    value_ids = [f"'{value.get('_id')}'" for value in values]
+    value_ids = [f"'{value['_id']}'" for value in values]
     value_ids = ", ".join(value_ids)
     return "(" + value_ids + ")"
 

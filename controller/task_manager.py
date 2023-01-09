@@ -32,7 +32,7 @@ def start_tokenization_task(
     project_id: str, user_id: str, type: str, attribute_name: Optional[str] = None
 ) -> int:
 
-    if type == "PROJECT":
+    if type == enums.TokenizationTaskTypes.PROJECT.value:
         initial_count = record.count_records_without_tokenization(project_id)
         if initial_count != 0:
             task = set_up_tokenization_task(
@@ -49,7 +49,7 @@ def start_tokenization_task(
         else:
             start_rats_task(project_id, user_id)
 
-    elif type == "ATTRIBUTE":
+    elif type == enums.TokenizationTaskTypes.ATTRIBUTE.value:
         initial_count = record.get_count_all_records(project_id)
         task = set_up_tokenization_task(
             project_id,

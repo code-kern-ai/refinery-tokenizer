@@ -1,37 +1,15 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from typing import Tuple
 
 
 from controller import task_manager, tokenization_manager
 from misc import util
 from handler import config_handler
+from request_classes import AttributeTokenizationRequest, RatsRequest, Request, ReuploadDocbins
 from submodules.model.business_objects import general
 
 app = FastAPI()
-
-
-class Request(BaseModel):
-    project_id: str
-    record_id: str
-    user_id: str
-
-
-class AttributeTokenizationRequest(BaseModel):
-    project_id: str
-    user_id: str
-    attribute_name: str
-
-
-class RatsRequest(BaseModel):
-    project_id: str
-    user_id: str
-    attribute_id: str
-
-
-class ReuploadDocbins(BaseModel):
-    project_id: str
 
 
 @app.post("/tokenize_record")

@@ -8,6 +8,7 @@ from misc import util
 from handler import config_handler
 from request_classes import AttributeTokenizationRequest, RatsRequest, Request, ReuploadDocbins
 from submodules.model.business_objects import general
+from submodules.model import enums
 
 app = FastAPI()
 
@@ -26,7 +27,7 @@ def tokenize_record(request: Request) -> Tuple[int, str]:
 def tokenize_record(request: AttributeTokenizationRequest) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
     value = task_manager.start_tokenization_task(
-        request.project_id, request.user_id, "ATTRIBUTE", request.attribute_name
+        request.project_id, request.user_id, enums.TokenizationTaskTypes.ATTRIBUTE.value, request.attribute_name
     )
     general.remove_and_refresh_session(session_token)
     return value, ""
@@ -36,7 +37,7 @@ def tokenize_record(request: AttributeTokenizationRequest) -> Tuple[int, str]:
 def tokenize_project(request: Request) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
     value = task_manager.start_tokenization_task(
-        request.project_id, request.user_id, "PROJECT"
+        request.project_id, request.user_id, enums.TokenizationTaskTypes.PROJECT.value
     )
     general.remove_and_refresh_session(session_token)
     return value, ""

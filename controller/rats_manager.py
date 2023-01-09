@@ -39,9 +39,9 @@ def trigger_rats_creation(
         create_rats_entries,
         project_id,
         user_id,
-        attribute_id,
         str(task.id),
         initial_count,
+        attribute_id,
     )
 
 
@@ -49,9 +49,9 @@ def trigger_rats_creation(
 def create_rats_entries(
     project_id: str,
     user_id: str,
-    attribute_id: str,
     task_id: str,
     initial_count: int,
+    attribute_id: Optional[str] = None,
 ) -> None:
     session_token = general.get_ctx_token()
     if not project.get(project_id):

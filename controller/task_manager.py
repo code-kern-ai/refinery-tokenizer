@@ -86,9 +86,9 @@ def start_rats_task(
             create_rats_entries,
             project_id,
             user_id,
-            attribute_id,
             str(task.id),
             initial_count,
+            attribute_id,
         )
     else:
         notification.create(

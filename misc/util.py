@@ -31,15 +31,6 @@ def put_data_in_minio_bucket(project_id: str, missing_columns: List[str]) -> Non
     s3.upload_tokenizer_data(org_id, project_id, data)
 
 
-def __put_data_in_minio_bucket(project_id: str, missing_columns: List[str]) -> None:
-    missing_columns_str = ",\n".join(
-        ["'" + k + "',r.data->'" + k + "'" for k in missing_columns]
-    )
-    org_id = organization.get_id_by_project_id(project_id)
-    data = tokenization.get_doc_bin_table_to_json(project_id, missing_columns_str)
-    s3.upload_tokenizer_data(org_id, project_id, data)
-
-
 def get_docs_from_db(project_id: str, record_id: str, vocab: Vocab) -> Dict[str, Doc]:
     tbl_entry = tokenization.get_record_tokenized_entry(project_id, record_id)
     if not tbl_entry:
@@ -63,7 +54,7 @@ def reupload_docbins(project_id: str) -> int:
             AttributeState.RUNNING.value,
         ],
     ).keys()
-    __put_data_in_minio_bucket(project_id, missing_columns)
+    put_data_in_minio_bucket(project_id, missing_columns)
     return 200
 
 

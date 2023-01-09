@@ -113,7 +113,7 @@ def create_rats_entries(
                 )
             record_set = record.get_missing_rats_records(project_id, 100, attribute_id)
             chunk += 1
-        __finalize_statistic_calculation(project_id, user_id, tokenization_task)
+        __finalize_rats_calculation(project_id, user_id, tokenization_task)
     except Exception:
         __handle_error(project_id, user_id, tokenization_task)
     finally:
@@ -126,9 +126,7 @@ def __set_up_statistic_calculation(
     tokenization_task = tokenization.get(project_id, task_id)
     tokenization_task.workload = initial_count
     tokenization_task.state = enums.TokenizerTask.STATE_IN_PROGRESS.value
-    send_websocket_update(
-        project_id, False, ["rats", "state", str(tokenization_task.state)]
-    )
+    send_websocket_update(project_id, False, ["rats", "state", tokenization_task.state])
     general.commit()
     return tokenization_task
 
@@ -147,7 +145,7 @@ def __update_progress(
     general.commit()
 
 
-def __finalize_statistic_calculation(
+def __finalize_rats_calculation(
     project_id: str, user_id: str, tokenization_task: RecordTokenizationTask
 ) -> None:
     record.delete_duplicated_rats()

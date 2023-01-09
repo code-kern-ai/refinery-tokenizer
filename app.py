@@ -62,7 +62,9 @@ def create_rats(request: RatsRequest) -> Tuple[int, str]:
 @app.put("/tokenize_project_for_migration/{project_id}")
 def tokenize_project_no_use(project_id: str) -> int:
     user_id = util.get_migration_user()
-    return util.start_tokenization_task(project_id, user_id)
+    return task_manager.start_tokenization_task(
+        project_id, user_id, enums.TokenizationTaskTypes.PROJECT.value
+    )
 
 
 @app.post("/reupload_docbins")

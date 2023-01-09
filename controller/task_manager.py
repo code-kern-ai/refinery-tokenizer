@@ -1,8 +1,8 @@
 from typing import Optional
 from controller.rats_manager import create_rats_entries
 from controller.tokenization_manager import (
-    manage_calculated_attribute_tokenization,
-    manage_initial_project_tokenization,
+    tokenize_calculated_attribute,
+    tokenize_initial_project,
 )
 from submodules.model import enums
 from submodules.model.business_objects import general, notification, record
@@ -40,7 +40,7 @@ def start_tokenization_task(
                 user_id,
             )
             daemon.run(
-                manage_initial_project_tokenization,
+                tokenize_initial_project,
                 project_id,
                 user_id,
                 str(task.id),
@@ -56,7 +56,7 @@ def start_tokenization_task(
             user_id,
         )
         daemon.run(
-            manage_calculated_attribute_tokenization,
+            tokenize_calculated_attribute,
             project_id,
             user_id,
             str(task.id),

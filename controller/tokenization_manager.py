@@ -23,7 +23,7 @@ from misc.util import send_websocket_update, upload_to_minio_after_every_10th_ch
 __prioritized_records = {}
 
 
-def manage_calculated_attribute_tokenization(
+def tokenize_calculated_attribute(
     project_id: str, user_id: str, task_id: str, initial_count: int, attribute_name: str
 ) -> None:
     try:
@@ -67,7 +67,7 @@ def manage_calculated_attribute_tokenization(
         __wrap_up_tokenization()
 
 
-def manage_initial_project_tokenization(
+def tokenize_initial_project(
     project_id: str, user_id: str, task_id: str, initial_count: int
 ) -> None:
     try:
@@ -105,7 +105,7 @@ def manage_initial_project_tokenization(
         __wrap_up_tokenization()
 
 
-def manage_record_tokenization(project_id: str, record_id: str) -> int:
+def tokenize_record(project_id: str, record_id: str) -> int:
     if record.has_byte_data(project_id, record_id):
         return 200
     try:

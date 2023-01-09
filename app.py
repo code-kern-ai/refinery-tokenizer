@@ -15,7 +15,7 @@ app = FastAPI()
 @app.post("/tokenize_record")
 def tokenize_record(request: Request) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
-    value = tokenization_manager.manage_record_tokenization(
+    value = tokenization_manager.tokenize_record(
         request.project_id, request.record_id
     )
     general.remove_and_refresh_session(session_token)

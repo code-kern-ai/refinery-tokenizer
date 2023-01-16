@@ -18,11 +18,12 @@ def get_tokenizer_by_project(project_id: str) -> Language:
     tokenizer_config_str = project_item.tokenizer
     tokenizer = get_tokenizer(tokenizer_config_str)
 
-    pickle_path = os.path.join("/inference", project_id, "tokenizer.pkl")
-    if not os.path.exists(pickle_path):
-        os.makedirs(os.path.dirname(pickle_path), exist_ok=True)
-        with open(pickle_path, "wb") as f:
-            pickle.dump(tokenizer, f)
+    if get_config_value("is_managed"):
+        pickle_path = os.path.join("/inference", project_id, "tokenizer.pkl")
+        if not os.path.exists(pickle_path):
+            os.makedirs(os.path.dirname(pickle_path), exist_ok=True)
+            with open(pickle_path, "wb") as f:
+                pickle.dump(tokenizer, f)
     return tokenizer
 
 

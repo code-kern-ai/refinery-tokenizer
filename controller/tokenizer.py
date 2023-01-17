@@ -20,7 +20,11 @@ def get_doc_bin_in_bytes(
             attribute_names_ordered.append(key)
             if update_statistic:
                 record.create_or_update_token_statistic(
-                    project_id, record_item.id, text_attributes[key], len(doc)
+                    project_id,
+                    record_item.id,
+                    text_attributes[key],
+                    len(doc),
+                    with_commit=True,
                 )
 
     return {

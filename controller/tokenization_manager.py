@@ -152,6 +152,8 @@ def __get_chunk_size_and_progress_per_chunk(full_count: int) -> Tuple[int, float
 
 
 def __check_attribute_is_text(attribute_item: Attribute) -> None:
+    if not attribute_item:
+        raise Exception("Attribute does not exist.")
     if attribute_item.data_type != enums.DataTypes.TEXT.value:
         raise Exception("Attribute is not of type text.")
 

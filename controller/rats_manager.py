@@ -81,7 +81,7 @@ def create_rats_entries(
                 ],
             )
         vocab = get_tokenizer_by_project(project_id).vocab
-        record_set = record.get_missing_rats_records(project_id, 100, attribute_id)
+        record_set = record.get_missing_rats_records(project_id, attribute_id, 100)
         chunk = 0
         while record_set:
             entries = []
@@ -111,7 +111,7 @@ def create_rats_entries(
                 __update_progress(
                     project_id, attribute_id, tokenization_task, initial_count
                 )
-            record_set = record.get_missing_rats_records(project_id, 100, attribute_id)
+            record_set = record.get_missing_rats_records(project_id, attribute_id, 100)
             chunk += 1
         __finalize_rats_calculation(project_id, user_id, tokenization_task)
     except Exception:

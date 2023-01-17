@@ -1,5 +1,8 @@
 from typing import Any, Dict, List, Tuple
-from controller.tokenizer import add_attribute_to_docbin, tokenize_record
+from controller.tokenizer import (
+    add_attribute_to_docbin,
+    tokenize_record as tokenize_single_record,
+)
 import traceback
 from controller.task_util import (
     finalize_task,
@@ -47,10 +50,8 @@ def tokenize_calculated_attribute(
         ]
         for idx, chunk in enumerate(chunks):
             values = [
-                (
-                    add_attribute_to_docbin(tokenizer, record_tokenized_item)
-                    for record_tokenized_item in chunk
-                )
+                add_attribute_to_docbin(tokenizer, record_tokenized_item)
+                for record_tokenized_item in chunk
             ]
 
             record.update_bytes_of_record_tokenized(values)
@@ -94,7 +95,9 @@ def tokenize_initial_project(
                 if __remove_from_priority_queue(project_id, record_item.id):
                     continue
                 entries.append(
-                    tokenize_record(project_id, tokenizer, record_item, text_attributes)
+                    tokenize_single_record(
+                        project_id, tokenizer, record_item, text_attributes
+                    )
                 )
             general.add_all(entries)
             upload_to_minio_after_every_10th_chunk(idx, project_id, non_text_attributes)

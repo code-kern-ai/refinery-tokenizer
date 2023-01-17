@@ -13,8 +13,7 @@ from submodules.model.models import RecordTokenizationTask
 
 
 def set_up_tokenization_task(
-    project_id: str,
-    user_id: str,
+    project_id: str, user_id: str, scope: str, attribute_name: Optional[str] = None
 ) -> RecordTokenizationTask:
     notification.create(
         project_id,
@@ -25,19 +24,24 @@ def set_up_tokenization_task(
     )
     general.commit()
     notification_util.send_notification_created(project_id, user_id, False)
-    return create_tokenization_task(project_id, user_id, with_commit=True)
+    return create_tokenization_task(
+        project_id,
+        user_id,
+        scope=scope,
+        attribute_name=attribute_name,
+        with_commit=True,
+    )
 
 
 def start_tokenization_task(
     project_id: str, user_id: str, type: str, attribute_name: Optional[str] = None
 ) -> int:
 
-    if type == enums.TokenizationTaskTypes.PROJECT.value:
+    if type == enums.RecordTokenizationScope.PROJECT.value:
         initial_count = record.count_records_without_tokenization(project_id)
         if initial_count != 0:
             task = set_up_tokenization_task(
-                project_id,
-                user_id,
+                project_id, user_id, enums.RecordTokenizationScope.PROJECT.value
             )
             daemon.run(
                 tokenize_initial_project,
@@ -49,11 +53,13 @@ def start_tokenization_task(
         else:
             start_rats_task(project_id, user_id)
 
-    elif type == enums.TokenizationTaskTypes.ATTRIBUTE.value:
+    elif type == enums.RecordTokenizationScope.ATTRIBUTE.value:
         initial_count = record.get_count_all_records(project_id)
         task = set_up_tokenization_task(
             project_id,
             user_id,
+            enums.RecordTokenizationScope.ATTRIBUTE.value,
+            attribute_name,
         )
         daemon.run(
             tokenize_calculated_attribute,

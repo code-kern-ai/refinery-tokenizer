@@ -86,7 +86,7 @@ def create_rats_entries(
         while record_set:
             entries = []
             for record_item in record_set:
-                docs = get_docs_from_db(project_id, str(record_item.record_id), vocab)
+                docs = get_docs_from_db(record_item, vocab)
                 attribute_ids = [str(id) for id in record_item.attribute_ids]
                 for col in text_attributes:
                     if text_attributes[col] in attribute_ids:

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class Request(BaseModel):
     project_id: str
     record_id: str
@@ -9,7 +10,7 @@ class Request(BaseModel):
 class AttributeTokenizationRequest(BaseModel):
     project_id: str
     user_id: str
-    attribute_name: str
+    attribute_id: str
 
 
 class RatsRequest(BaseModel):

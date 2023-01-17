@@ -33,7 +33,7 @@ def tokenize_record(request: AttributeTokenizationRequest) -> Tuple[int, str]:
         request.project_id,
         request.user_id,
         enums.TokenizationTaskTypes.ATTRIBUTE.value,
-        request.attribute_name,
+        request.attribute_id,
     )
     general.remove_and_refresh_session(session_token)
     return 200, ""

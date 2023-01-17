@@ -5,7 +5,7 @@ from controller.tokenization_manager import (
     tokenize_initial_project,
 )
 from submodules.model import enums
-from submodules.model.business_objects import general, notification, record
+from submodules.model.business_objects import attribute, general, notification, record
 from submodules.model.business_objects import tokenization
 from submodules.model.business_objects.tokenization import create_tokenization_task
 from misc import daemon, notification as notification_util
@@ -34,7 +34,7 @@ def set_up_tokenization_task(
 
 
 def start_tokenization_task(
-    project_id: str, user_id: str, type: str, attribute_name: Optional[str] = None
+    project_id: str, user_id: str, type: str, attribute_id: Optional[str] = None
 ) -> int:
 
     if type == enums.RecordTokenizationScope.PROJECT.value:
@@ -54,6 +54,7 @@ def start_tokenization_task(
             start_rats_task(project_id, user_id)
 
     elif type == enums.RecordTokenizationScope.ATTRIBUTE.value:
+        attribute_name = attribute.get(project_id, attribute_id).name
         initial_count = record.get_count_all_records(project_id)
         task = set_up_tokenization_task(
             project_id,

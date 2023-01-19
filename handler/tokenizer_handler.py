@@ -1,8 +1,6 @@
 import spacy
 from spacy.language import Language
-from spacy.tokens import DocBin, Doc
-from spacy.vocab import Vocab
-from config_handler import get_config_value
+from handler.config_handler import get_config_value
 from submodules.model.business_objects import (
     project,
 )

@@ -25,7 +25,11 @@ from misc.util import get_docs_from_db, send_websocket_update
 from submodules.model.models import RecordTokenizationTask
 
 
-def trigger_rats_creation(project_id: str, user_id: str) -> None:
+def trigger_rats_creation(
+    project_id: str,
+    user_id: str,
+    tokenization_task: Optional[RecordTokenizationTask] = None,
+) -> None:
     initial_count = record.count_missing_rats_records(project_id)
     if initial_count == 0:
         return
@@ -33,6 +37,8 @@ def trigger_rats_creation(project_id: str, user_id: str) -> None:
         project_id,
         user_id,
         enums.TokenizerTask.TYPE_TOKEN_STATISTICS.value,
+        scope=tokenization_task.scope,
+        attribute_name=tokenization_task.attribute_name,
         with_commit=True,
     )
     daemon.run(

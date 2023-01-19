@@ -51,4 +51,4 @@ def finalize_task(
     send_websocket_update(
         project_id, False, ["docbin", "state", str(tokenization_task.state)]
     )
-    trigger_rats_creation(project_id, user_id)
+    trigger_rats_creation(project_id, user_id, tokenization_task)

@@ -82,11 +82,19 @@ def start_rats_task(
 
     initial_count = record.count_missing_rats_records(project_id, attribute_id)
 
+    attribute_name = None
+    if attribute_id:
+        attribute_name = attribute.get(project_id, attribute_id)
+
     if initial_count != 0:
         task = tokenization.create_tokenization_task(
             project_id,
             user_id,
             enums.TokenizerTask.TYPE_TOKEN_STATISTICS.value,
+            scope=enums.RecordTokenizationScope.ATTRIBUTE.value
+            if attribute_id
+            else enums.RecordTokenizationScope.PROJECT.value,
+            attribute_name=attribute_name,
             with_commit=True,
         )
         daemon.run(

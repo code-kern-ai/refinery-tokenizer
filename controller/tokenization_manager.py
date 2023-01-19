@@ -54,7 +54,7 @@ def tokenize_calculated_attribute(
                 for record_tokenized_item in chunk
             ]
 
-            record.update_bytes_of_record_tokenized(values)
+            record.update_bytes_of_record_tokenized(values, project_id)
             rt_ids_string_for_update = __get_value_ids_string_for_update(values)
             record.update_columns_of_tokenized_records(
                 rt_ids_string_for_update, attribute_name

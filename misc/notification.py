@@ -1,6 +1,6 @@
 import requests
 import os
-from decorator import param_throttle
+from .decorator import param_throttle
 from submodules.model.business_objects import project
 
 

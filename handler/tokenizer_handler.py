@@ -2,7 +2,7 @@ import os
 import pickle
 import spacy
 from spacy.language import Language
-from config_handler import get_config_value
+from handler.config_handler import get_config_value
 from submodules.model.business_objects import (
     project,
 )

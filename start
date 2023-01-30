@@ -29,9 +29,9 @@ then
     INFERENCE_DIR=${PWD%/*/*}/dev-setup/inference/
     if [ ! -d "$INFERENCE_DIR" ] 
     then
-        # to include volume for local development, use the dev-setup model data folder:  
+        # to include volume for local development, use the dev-setup inference folder:  
         # alternative use manual logic with
-        # -v /path/to/dev-setup/model-data:/models \
+        # -v /path/to/dev-setup/inference:/models \
         echo "Can't find model data directory: $INFERENCE_DIR -> stopping" 
         exit 1
     fi

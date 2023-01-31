@@ -23,6 +23,19 @@ else
 fi
 echo -ne '\t\t [done]\n'
 
+INFERENCE_DIR=${PWD%/*}/dev-setup/inference/
+if [ ! -d "$_DIR" ] 
+then
+    INFERENCE_DIR=${PWD%/*/*}/dev-setup/inference/
+    if [ ! -d "$INFERENCE_DIR" ] 
+    then
+        # to include volume for local development, use the dev-setup inference folder:  
+        # alternative use manual logic with
+        # -v /path/to/dev-setup/inference:/models \
+        echo "Can't find model data directory: $INFERENCE_DIR -> stopping" 
+        exit 1
+    fi
+fi
 
 echo -ne 'building container...'
 if [ $HIDE_BUILD -eq 1 ]
@@ -42,6 +55,7 @@ docker run -d --rm \
 -e S3_SECRET_KEY=r6ywtR33!DMlaL*SUUdy \
 -e WS_NOTIFY_ENDPOINT=http://refinery-websocket:8080 \
 -e POSTGRES=postgresql://postgres:onetask@graphql-postgres:5432 \
+-v "$INFERENCE_DIR":/inference \
 --mount type=bind,source="$(pwd)"/,target=/app \
 -v /var/run/docker.sock:/var/run/docker.sock \
 --network dev-setup_default \

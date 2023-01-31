@@ -1,3 +1,5 @@
+import os
+import pickle
 import spacy
 from spacy.language import Language
 from handler.config_handler import get_config_value
@@ -14,7 +16,15 @@ __tokenizer_by_config_str = {}
 def get_tokenizer_by_project(project_id: str) -> Language:
     project_item = project.get(project_id)
     tokenizer_config_str = project_item.tokenizer
-    return get_tokenizer(tokenizer_config_str)
+    tokenizer = get_tokenizer(tokenizer_config_str)
+
+    if get_config_value("is_managed"):
+        pickle_path = os.path.join("/inference", project_id, "tokenizer.pkl")
+        if not os.path.exists(pickle_path):
+            os.makedirs(os.path.dirname(pickle_path), exist_ok=True)
+            with open(pickle_path, "wb") as f:
+                pickle.dump(tokenizer, f)
+    return tokenizer
 
 
 def init_tokenizer(config_string: str) -> None:

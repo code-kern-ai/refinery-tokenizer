@@ -24,7 +24,7 @@ fi
 echo -ne '\t\t [done]\n'
 
 INFERENCE_DIR=${PWD%/*}/dev-setup/inference/
-if [ ! -d "$_DIR" ] 
+if [ ! -d "$INFERENCE_DIR" ]
 then
     INFERENCE_DIR=${PWD%/*/*}/dev-setup/inference/
     if [ ! -d "$INFERENCE_DIR" ] 

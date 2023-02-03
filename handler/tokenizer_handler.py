@@ -18,12 +18,6 @@ def get_tokenizer_by_project(project_id: str) -> Language:
     tokenizer_config_str = project_item.tokenizer
     tokenizer = get_tokenizer(tokenizer_config_str)
 
-    if get_config_value("is_managed"):
-        pickle_path = os.path.join("/inference", project_id, "tokenizer.pkl")
-        if not os.path.exists(pickle_path):
-            os.makedirs(os.path.dirname(pickle_path), exist_ok=True)
-            with open(pickle_path, "wb") as f:
-                pickle.dump(tokenizer, f)
     return tokenizer
 
 
@@ -58,4 +52,23 @@ def get_tokenizer(config_string: str) -> Language:
     if config_string not in __tokenizer_by_config_str:
         print(f"config string {config_string} not yet loaded", flush=True)
         init_tokenizer(config_string)
+        if get_config_value("is_managed"):
+            save_tokenizer_as_pickle(config_string)
+
     return __tokenizer_by_config_str[config_string]
+
+
+def save_tokenizer_as_pickle(config_string: str) -> None:
+
+    # this is only relevant if the save_tokenizer endpoint is called
+    # when invoked from get_tokenizer, the tokenizer is always loaded
+    if config_string not in __tokenizer_by_config_str:
+        init_tokenizer(config_string)
+
+    pickle_path = os.path.join(
+        "/inference/tokenizers", f"tokenizer-{config_string}.pkl"
+    )
+    if not os.path.exists(pickle_path):
+        os.makedirs(os.path.dirname(pickle_path), exist_ok=True)
+        with open(pickle_path, "wb") as f:
+            pickle.dump(__tokenizer_by_config_str[config_string], f)

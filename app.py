@@ -78,8 +78,7 @@ def reupload_docbins(request: ReuploadDocbins) -> Tuple[int, str]:
 
 @app.post("/save_tokenizer")
 def save_tokenizer_as_pickle(request: SaveTokenizer) -> Tuple[int, str]:
-    config_string = request.config_string
-    tokenizer_handler.save_tokenizer_as_pickle(config_string)
+    tokenizer_handler.save_tokenizer_as_pickle(request.config_string, request.overwrite)
     return 200, ""
 
 

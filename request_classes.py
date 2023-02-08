@@ -25,3 +25,4 @@ class ReuploadDocbins(BaseModel):
 
 class SaveTokenizer(BaseModel):
     config_string: str
+    overwrite: bool = False

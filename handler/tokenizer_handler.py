@@ -58,7 +58,7 @@ def get_tokenizer(config_string: str) -> Language:
     return __tokenizer_by_config_str[config_string]
 
 
-def save_tokenizer_as_pickle(config_string: str) -> None:
+def save_tokenizer_as_pickle(config_string: str, overwrite: bool = False) -> None:
 
     # this is only relevant if the save_tokenizer endpoint is called
     # when invoked from get_tokenizer, the tokenizer is always loaded
@@ -68,7 +68,7 @@ def save_tokenizer_as_pickle(config_string: str) -> None:
     pickle_path = os.path.join(
         "/inference/tokenizers", f"tokenizer-{config_string}.pkl"
     )
-    if not os.path.exists(pickle_path):
+    if not os.path.exists(pickle_path) or overwrite:
         os.makedirs(os.path.dirname(pickle_path), exist_ok=True)
         with open(pickle_path, "wb") as f:
             pickle.dump(__tokenizer_by_config_str[config_string], f)

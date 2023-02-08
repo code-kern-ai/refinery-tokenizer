@@ -5,12 +5,13 @@ from typing import Tuple
 
 from controller import task_manager, tokenization_manager
 from misc import util
-from handler import config_handler
+from handler import config_handler, tokenizer_handler
 from request_classes import (
     AttributeTokenizationRequest,
     RatsRequest,
     Request,
     ReuploadDocbins,
+    SaveTokenizer,
 )
 from submodules.model.business_objects import general
 from submodules.model import enums
@@ -72,6 +73,12 @@ def reupload_docbins(request: ReuploadDocbins) -> Tuple[int, str]:
     session_token = general.get_ctx_token()
     util.reupload_docbins(request.project_id)
     general.remove_and_refresh_session(session_token)
+    return 200, ""
+
+
+@app.post("/save_tokenizer")
+def save_tokenizer_as_pickle(request: SaveTokenizer) -> Tuple[int, str]:
+    tokenizer_handler.save_tokenizer_as_pickle(request.config_string, request.overwrite)
     return 200, ""
 
 

@@ -21,3 +21,8 @@ class RatsRequest(BaseModel):
 
 class ReuploadDocbins(BaseModel):
     project_id: str
+
+
+class SaveTokenizer(BaseModel):
+    config_string: str
+    overwrite: bool = False

@@ -15,7 +15,11 @@ def get_doc_bin_in_bytes(
     attribute_names_ordered = []
     for key in record_item.data:
         if key in text_attributes:
-            doc = tokenizer(record_item.data[key])
+            to_be_tokenized = record_item.data[key]
+            if not to_be_tokenized:
+                # None / null types can't be tokenized by spacy so dummy string is used
+                to_be_tokenized = ""
+            doc = tokenizer(to_be_tokenized)
             doc_bin.add(doc)
             attribute_names_ordered.append(key)
             if update_statistic:
@@ -34,12 +38,17 @@ def get_doc_bin_in_bytes(
 
 
 def add_attribute_to_docbin(
-    tokenizer: str, tokenized_record: RecordTokenized
+    tokenizer: str,
+    tokenized_record: Any,  # from get_attribute_data_with_doc_bins_of_records
 ) -> Dict[str, Any]:
     doc_bin = DocBin()
     doc_bin_bytes = tokenized_record.bytes
     doc_bin.from_bytes(doc_bin_bytes)
-    doc = tokenizer(tokenized_record.attribute_data)
+    to_be_tokenized = tokenized_record.attribute_data
+    if not to_be_tokenized:
+        # None / null types can't be tokenized by spacy so dummy string is used
+        to_be_tokenized = ""
+    doc = tokenizer(to_be_tokenized)
     doc_bin.add(doc)
     return {
         "_id": tokenized_record.id,

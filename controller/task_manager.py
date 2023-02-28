@@ -10,6 +10,7 @@ from submodules.model.business_objects import tokenization
 from submodules.model.business_objects.tokenization import create_tokenization_task
 from misc import daemon, notification as notification_util
 from submodules.model.models import RecordTokenizationTask
+from fastapi import status
 
 
 def set_up_tokenization_task(
@@ -70,7 +71,7 @@ def start_tokenization_task(
             initial_count,
             attribute_name,
         )
-    return 200
+    return status.HTTP_200_OK
 
 
 def start_rats_task(
@@ -114,4 +115,4 @@ def start_rats_task(
             enums.NotificationType.TOKEN_CREATION_DONE.value,
         )
         general.commit()
-    return 200
+    return status.HTTP_200_OK

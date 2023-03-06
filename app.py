@@ -1,5 +1,4 @@
 from fastapi import FastAPI, responses, status
-from typing import Tuple
 
 
 from controller import task_manager, tokenization_manager
@@ -27,7 +26,7 @@ def tokenize_record(request: Request) -> responses.PlainTextResponse:
 
 
 @app.post("/tokenize_calculated_attribute")
-def tokenize_record(
+def tokenize_calculated_attribute(
     request: AttributeTokenizationRequest,
 ) -> responses.PlainTextResponse:
     session_token = general.get_ctx_token()

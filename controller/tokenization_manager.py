@@ -127,7 +127,7 @@ def tokenize_record(project_id: str, record_id: str) -> int:
         )
         tokenizer = get_tokenizer_by_project(project_id)
         record_item = record.get(project_id, record_id)
-        entry = tokenize_record(
+        entry = tokenize_single_record(
             project_id, tokenizer, record_item, text_attributes, update_statistic=True
         )
         general.add(entry)

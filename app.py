@@ -96,3 +96,12 @@ async def error_handler() -> responses.PlainTextResponse:
 def config_changed() -> responses.PlainTextResponse:
     config_handler.refresh_config()
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
+
+
+@app.get("/healthcheck")
+def healthcheck() -> responses.PlainTextResponse:
+    headers = {"APP": "OK"}
+    database_test = general.test_database_connection()
+    if not database_test.get("success"):
+        headers["DATABASE"] = database_test.get("error")
+    return responses.PlainTextResponse("OK", headers=headers)

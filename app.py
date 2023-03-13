@@ -34,6 +34,8 @@ def tokenize_calculated_attribute(
         request.project_id,
         request.user_id,
         enums.TokenizationTaskTypes.ATTRIBUTE.value,
+        request.include_rats,
+        False,
         request.attribute_id,
     )
     general.remove_and_refresh_session(session_token)
@@ -44,7 +46,11 @@ def tokenize_calculated_attribute(
 def tokenize_project(request: Request) -> responses.PlainTextResponse:
     session_token = general.get_ctx_token()
     task_manager.start_tokenization_task(
-        request.project_id, request.user_id, enums.TokenizationTaskTypes.PROJECT.value
+        request.project_id,
+        request.user_id,
+        enums.TokenizationTaskTypes.PROJECT.value,
+        request.include_rats,
+        request.only_uploaded_attributes,
     )
     general.remove_and_refresh_session(session_token)
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
@@ -55,7 +61,9 @@ def tokenize_project(request: Request) -> responses.PlainTextResponse:
 def create_rats(request: RatsRequest) -> responses.PlainTextResponse:
     session_token = general.get_ctx_token()
     attribute_id = request.attribute_id if request.attribute_id != "" else None
-    task_manager.start_rats_task(request.project_id, request.user_id, attribute_id)
+    task_manager.start_rats_task(
+        request.project_id, request.user_id, False, attribute_id
+    )
     general.remove_and_refresh_session(session_token)
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
 

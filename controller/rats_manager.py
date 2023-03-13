@@ -29,6 +29,7 @@ def trigger_rats_creation(
     project_id: str,
     user_id: str,
     tokenization_task: Optional[RecordTokenizationTask] = None,
+    only_uploaded_attributes: bool = False,
 ) -> None:
     initial_count = record.count_missing_rats_records(project_id)
     if initial_count == 0:
@@ -47,6 +48,7 @@ def trigger_rats_creation(
         user_id,
         str(task.id),
         initial_count,
+        only_uploaded_attributes,
         None,
     )
 
@@ -57,6 +59,7 @@ def create_rats_entries(
     user_id: str,
     task_id: str,
     initial_count: int,
+    only_uploaded_attributes: bool = False,
     attribute_id: Optional[str] = None,
 ) -> None:
     session_token = general.get_ctx_token()
@@ -78,14 +81,22 @@ def create_rats_entries(
             text_attribute = attribute.get(project_id, attribute_id)
             text_attributes = {text_attribute.name: text_attribute.id}
         else:
-            text_attributes = attribute.get_text_attributes(
-                project_id,
-                state_filter=[
-                    AttributeState.UPLOADED.value,
-                    AttributeState.USABLE.value,
-                    AttributeState.RUNNING.value,
-                ],
-            )
+            if only_uploaded_attributes:
+                text_attributes = attribute.get_text_attributes(
+                    project_id,
+                    state_filter=[
+                        AttributeState.UPLOADED.value,
+                    ],
+                )
+            else:
+                text_attributes = attribute.get_text_attributes(
+                    project_id,
+                    state_filter=[
+                        AttributeState.UPLOADED.value,
+                        AttributeState.USABLE.value,
+                        AttributeState.RUNNING.value,
+                    ],
+                )
         vocab = get_tokenizer_by_project(project_id).vocab
         record_set = record.get_missing_rats_records(project_id, attribute_id, 100)
         chunk = 0

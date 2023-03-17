@@ -38,6 +38,8 @@ def finalize_task(
     user_id: str,
     non_text_attributes: List[str],
     tokenization_task: RecordTokenizationTask,
+    include_rats: bool = True,
+    only_uploaded_attributes: bool = False,
 ) -> None:
     tokenization.delete_dublicated_tokenization(project_id)
     put_data_in_minio_bucket(project_id, non_text_attributes)
@@ -51,4 +53,7 @@ def finalize_task(
     send_websocket_update(
         project_id, False, ["docbin", "state", str(tokenization_task.state)]
     )
-    trigger_rats_creation(project_id, user_id, tokenization_task)
+    if include_rats:
+        trigger_rats_creation(
+            project_id, user_id, tokenization_task, only_uploaded_attributes
+        )

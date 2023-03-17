@@ -35,9 +35,13 @@ def set_up_tokenization_task(
 
 
 def start_tokenization_task(
-    project_id: str, user_id: str, type: str, attribute_id: Optional[str] = None
+    project_id: str,
+    user_id: str,
+    type: str,
+    include_rats: bool = True,
+    only_uploaded_attributes: bool = False,
+    attribute_id: Optional[str] = None,
 ) -> int:
-
     if type == enums.RecordTokenizationScope.PROJECT.value:
         initial_count = record.count_records_without_tokenization(project_id)
         if initial_count != 0:
@@ -50,9 +54,11 @@ def start_tokenization_task(
                 user_id,
                 str(task.id),
                 initial_count,
+                only_uploaded_attributes,
+                include_rats,
             )
-        else:
-            start_rats_task(project_id, user_id)
+        elif include_rats:
+            start_rats_task(project_id, user_id, only_uploaded_attributes)
 
     elif type == enums.RecordTokenizationScope.ATTRIBUTE.value:
         attribute_name = attribute.get(project_id, attribute_id).name
@@ -70,12 +76,16 @@ def start_tokenization_task(
             str(task.id),
             initial_count,
             attribute_name,
+            include_rats,
         )
     return status.HTTP_200_OK
 
 
 def start_rats_task(
-    project_id: str, user_id: str, attribute_id: Optional[str] = None
+    project_id: str,
+    user_id: str,
+    only_uploaded_attributes: bool = False,
+    attribute_id: Optional[str] = None,
 ) -> int:
     if tokenization.is_doc_bin_creation_running(project_id):
         # at the end of doc bin creation rats will be calculated
@@ -104,6 +114,7 @@ def start_rats_task(
             user_id,
             str(task.id),
             initial_count,
+            only_uploaded_attributes,
             attribute_id,
         )
     else:

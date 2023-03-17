@@ -27,7 +27,12 @@ __prioritized_records = {}
 
 
 def tokenize_calculated_attribute(
-    project_id: str, user_id: str, task_id: str, initial_count: int, attribute_name: str
+    project_id: str,
+    user_id: str,
+    task_id: str,
+    initial_count: int,
+    attribute_name: str,
+    include_rats: bool = True,
 ) -> None:
     try:
         tokenization_task, tokenizer = __set_up_tokenization(
@@ -63,7 +68,9 @@ def tokenize_calculated_attribute(
             update_tokenization_progress(
                 project_id, tokenization_task, progress_per_chunk
             )
-        finalize_task(project_id, user_id, non_text_attributes, tokenization_task)
+        finalize_task(
+            project_id, user_id, non_text_attributes, tokenization_task, include_rats
+        )
     except Exception as e:
         __handle_error(project_id, user_id, task_id)
         raise e
@@ -72,14 +79,33 @@ def tokenize_calculated_attribute(
 
 
 def tokenize_initial_project(
-    project_id: str, user_id: str, task_id: str, initial_count: int
+    project_id: str,
+    user_id: str,
+    task_id: str,
+    initial_count: int,
+    only_uploaded_attributes: bool = False,
+    include_rats: bool = True,
 ) -> None:
     try:
         tokenization_task, tokenizer = __set_up_tokenization(
             project_id, task_id, initial_count
         )
-        text_attributes = attribute.get_text_attributes(project_id).keys()
-        non_text_attributes = attribute.get_non_text_attributes(project_id).keys()
+        if only_uploaded_attributes:
+            text_attributes = attribute.get_text_attributes(
+                project_id,
+                state_filter=[
+                    enums.AttributeState.UPLOADED.value,
+                ],
+            ).keys()
+            non_text_attributes = attribute.get_non_text_attributes(
+                project_id,
+                state_filter=[
+                    enums.AttributeState.UPLOADED.value,
+                ],
+            ).keys()
+        else:
+            text_attributes = attribute.get_text_attributes(project_id).keys()
+            non_text_attributes = attribute.get_non_text_attributes(project_id).keys()
 
         full_count = record.count_records_without_tokenization(project_id)
         chunk_size, progress_per_chunk = __get_chunk_size_and_progress_per_chunk(
@@ -104,7 +130,14 @@ def tokenize_initial_project(
             update_tokenization_progress(
                 project_id, tokenization_task, progress_per_chunk
             )
-        finalize_task(project_id, user_id, non_text_attributes, tokenization_task)
+        finalize_task(
+            project_id,
+            user_id,
+            non_text_attributes,
+            tokenization_task,
+            include_rats,
+            only_uploaded_attributes,
+        )
     except Exception:
         __handle_error(project_id, user_id, task_id)
     finally:

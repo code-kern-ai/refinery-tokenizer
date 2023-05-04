@@ -124,7 +124,7 @@ def create_rats_entries(
                 general.add_all(entries)
                 general.commit()
             if chunk % 20 == 0:
-                # ensure session isn't used up to refresh ocasionally
+                # ensure session isn't used up to refresh occasionally
                 session_token = general.remove_and_refresh_session(session_token, True)
                 tokenization_task = tokenization.get(project_id, task_id)
                 __update_progress(
@@ -134,7 +134,7 @@ def create_rats_entries(
             chunk += 1
         __finalize_rats_calculation(project_id, user_id, tokenization_task)
     except Exception:
-        __handle_error(project_id, user_id, tokenization_task)
+        __handle_error(project_id, user_id, task_id)
     finally:
         general.remove_and_refresh_session(session_token, False)
 
@@ -188,21 +188,32 @@ def __finalize_rats_calculation(
     send_notification_created(project_id, user_id, False)
 
 
-def __handle_error(
-    project_id: str, user_id: str, tokenization_task: RecordTokenizationTask
-) -> None:
-    general.rollback()
-    print(traceback.format_exc(), flush=True)
-    tokenization_task.state = enums.TokenizerTask.STATE_FAILED.value
-    send_websocket_update(
-        project_id, False, ["rats", "state", str(tokenization_task.state)]
-    )
-    notification.create(
-        project_id,
-        user_id,
-        "An error occured during token statistic calculation. Please contact the support.",
-        "ERROR",
-        enums.NotificationType.TOKEN_CREATION_FAILED.value,
-    )
-    general.commit()
-    send_notification_created(project_id, user_id, False)
+def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
+    try:
+        general.rollback()
+    except Exception:
+        print("couldn't rollback session", flush=True)
+
+    project_item = project.get(project_id)
+    if (
+        project_item is not None
+        and project_item.status != enums.ProjectStatus.IN_DELETION.value
+    ):
+        tokenization_task = tokenization.get(project_id, task_id)
+        print(traceback.format_exc(), flush=True)
+        tokenization_task.state = enums.TokenizerTask.STATE_FAILED.value
+        send_websocket_update(
+            project_id, False, ["rats", "state", str(tokenization_task.state)]
+        )
+        notification.create(
+            project_id,
+            user_id,
+            "An error occurred during token statistic calculation. Please contact the support.",
+            "ERROR",
+            enums.NotificationType.TOKEN_CREATION_FAILED.value,
+        )
+        general.commit()
+        send_notification_created(project_id, user_id, False)
+
+    else:
+        print("Stopping since no project exists to complete the task", flush=True)

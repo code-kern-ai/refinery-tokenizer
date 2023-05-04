@@ -73,7 +73,6 @@ def tokenize_calculated_attribute(
         )
     except Exception as e:
         __handle_error(project_id, user_id, task_id)
-        raise e
     finally:
         __wrap_up_tokenization()
 
@@ -220,10 +219,13 @@ def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
     try:
         general.rollback()
     except Exception:
-        session_token = general.get_ctx_token()
-        general.remove_and_refresh_session(session_token, True)
-    tokenization_task = tokenization.get(project_id, task_id)
-    if project.get(project_id):
+        print("couldn't rollback session", flush=True)        
+    project_item = project.get(project_id)
+    if (
+        project_item is not None
+        and project_item.status != enums.ProjectStatus.IN_DELETION.value
+    ):
+        tokenization_task = tokenization.get(project_id, task_id)
         print(traceback.format_exc(), flush=True)
         tokenization_task.state = enums.TokenizerTask.STATE_FAILED.value
         notification.create(
@@ -239,7 +241,7 @@ def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
             project_id, False, ["docbin", "state", str(tokenization_task.state)]
         )
     else:
-        print("Stopping since no project existst to complete the task", flush=True)
+        print("Stopping since no project exists to complete the task", flush=True)
 
 
 def __wrap_up_tokenization() -> None:

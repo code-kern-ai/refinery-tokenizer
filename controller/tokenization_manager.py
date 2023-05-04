@@ -124,7 +124,6 @@ def tokenize_initial_project(
                         project_id, tokenizer, record_item, text_attributes
                     )
                 )
-
             general.add_all(entries)
             upload_to_minio_after_every_10th_chunk(idx, project_id, non_text_attributes)
             update_tokenization_progress(
@@ -220,8 +219,7 @@ def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
     try:
         general.rollback()
     except Exception:
-        session_token = general.get_ctx_token()
-        general.remove_and_refresh_session(session_token, True)
+        print("couldn't rollback session", flush=True)        
     project_item = project.get(project_id)
     if (
         project_item is not None

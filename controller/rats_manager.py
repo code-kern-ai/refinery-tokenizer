@@ -192,8 +192,7 @@ def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
     try:
         general.rollback()
     except Exception:
-        session_token = general.get_ctx_token()
-        general.remove_and_refresh_session(session_token, True)
+        print("couldn't rollback session", flush=True)
 
     project_item = project.get(project_id)
     if (

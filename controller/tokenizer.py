@@ -20,7 +20,7 @@ def get_doc_bin_in_bytes(
                 # None / null types can't be tokenized by spacy so dummy string is used
                 to_be_tokenized = ""
 
-            if type(to_be_tokenized) != str:
+            if not isinstance(to_be_tokenized, str):
                 to_be_tokenized = str(to_be_tokenized)
 
             doc = tokenizer(to_be_tokenized)

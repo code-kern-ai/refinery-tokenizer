@@ -19,6 +19,10 @@ def get_doc_bin_in_bytes(
             if not to_be_tokenized:
                 # None / null types can't be tokenized by spacy so dummy string is used
                 to_be_tokenized = ""
+
+            if not isinstance(to_be_tokenized, str):
+                to_be_tokenized = str(to_be_tokenized)
+
             doc = tokenizer(to_be_tokenized)
             doc_bin.add(doc)
             attribute_names_ordered.append(key)

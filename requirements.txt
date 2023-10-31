@@ -158,7 +158,7 @@ typing-extensions==4.7.1
     #   -r requirements/common-requirements.txt
     #   pydantic
     #   starlette
-urllib3==1.26.16
+urllib3==1.26.18
     # via
     #   -r requirements/common-requirements.txt
     #   botocore

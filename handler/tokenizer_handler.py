@@ -26,7 +26,7 @@ def init_tokenizer(config_string: str) -> None:
         __download_tokenizer(config_string)
     try:
         __tokenizer_by_config_str[config_string] = spacy.load(config_string)
-    except:
+    except Exception:
         print(traceback.format_exc(), flush=True)
 
 
@@ -52,14 +52,12 @@ def get_tokenizer(config_string: str) -> Language:
     if config_string not in __tokenizer_by_config_str:
         print(f"config string {config_string} not yet loaded", flush=True)
         init_tokenizer(config_string)
-        if get_config_value("is_managed"):
-            save_tokenizer_as_pickle(config_string)
+        save_tokenizer_as_pickle(config_string)
 
     return __tokenizer_by_config_str[config_string]
 
 
 def save_tokenizer_as_pickle(config_string: str, overwrite: bool = False) -> None:
-
     # this is only relevant if the save_tokenizer endpoint is called
     # when invoked from get_tokenizer, the tokenizer is always loaded
     if config_string not in __tokenizer_by_config_str:

@@ -30,9 +30,6 @@ trigger:
   event:
     - push
 
-image_pull_secrets:
-  - dockerconfigjson
-
 ---
 kind: pipeline
 type: docker
@@ -99,9 +96,6 @@ trigger:
     - beta-v2
   event:
     - push
-
-image_pull_secrets:
-  - dockerconfigjson
 
 ---
 kind: pipeline

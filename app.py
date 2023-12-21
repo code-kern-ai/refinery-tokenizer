@@ -95,9 +95,14 @@ def save_tokenizer_as_pickle(request: SaveTokenizer) -> responses.PlainTextRespo
 def rework_markdown_file_content(
     org_id: str, file_id: str, step: str
 ) -> responses.Response:
-    if not markdown_file_content.rework_markdown_file_content(
-        org_id, file_id, step.upper()
-    ):
+    session_token = general.get_ctx_token()
+    try:
+        r = markdown_file_content.rework_markdown_file_content(
+            org_id, file_id, step.upper()
+        )
+    finally:
+        general.remove_and_refresh_session(session_token)
+    if not r:
         return responses.Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return responses.Response(status_code=status.HTTP_200_OK)
 

@@ -6,9 +6,10 @@ from submodules.model.business_objects import general
 from submodules.model.enums import CognitionMarkdownFileState
 from spacy.language import Language
 
+SEGMENT_DIVIDER = "\n\n"
 
 def rework_markdown_file_content(org_id: str, file_id: str, step: str) -> bool:
-    if step.lower() == "SEGMENT_SENTENCES":
+    if step == "SEGMENT_SENTENCES":
         return __rework_segment_sentences(org_id, file_id)
     return True
 
@@ -24,22 +25,23 @@ def __rework_segment_sentences(org_id: str, file_id: str) -> bool:
     content = markdown_file_item.content
     try:
         nlp = get_tokenizer(dataset_item.tokenizer)
+        max_length = __lookup_final_max_length(nlp)
         # Split the content into smaller chunks if it's too large
-        if len(content) > nlp.max_length:
-            chunks = __chunk_text(content)
+        if __utf8len(content) > max_length:
+            chunks = __chunk_text_on_bytes(content,max_length - 100)
             processed_chunks = []
 
             for chunk in chunks:
                 doc = nlp(chunk)
-                processed_chunk = "\n\n".join(
+                processed_chunk = SEGMENT_DIVIDER.join(
                     [sentence for sentence in __segment_sentences(doc)]
                 )
                 processed_chunks.append(processed_chunk)
 
-            content = "\n\n".join(processed_chunks)
+            content = SEGMENT_DIVIDER.join(processed_chunks)
         else:
             doc = nlp(content)
-            content = "\n\n".join([sentence for sentence in __segment_sentences(doc)])
+            content = SEGMENT_DIVIDER.join([sentence for sentence in __segment_sentences(doc)])
         markdown_file_item.content = content
         general.commit()
         return True
@@ -80,3 +82,47 @@ def __segment_sentences(doc: Language):
 
 def __chunk_text(text: str, chunk_size: int = 1_000_000):
     return [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
+
+# splits not after x bytes but ensures that max x bytes are used without destroying the characters 
+def __chunk_text_on_bytes(text: str, max_chunk_size: int = 1_000_000):
+    factor = len(text) / __utf8len(text)
+    increase_by = int(max(min(max_chunk_size*.1,10),1))
+    initial_size_guess = int(max(max_chunk_size * factor - 10,1))
+    final_list = []
+    remaining = text
+    while len(remaining):
+        part = remaining[:initial_size_guess]
+        if __utf8len(part) > max_chunk_size:
+            initial_size_guess = max(initial_size_guess - min(max_chunk_size *.001,10),1) 
+            continue
+        cut_after = initial_size_guess
+        while __utf8len(part) < max_chunk_size and part != remaining:
+            cut_after = min(len(remaining), cut_after+increase_by)
+            part = remaining[:cut_after]
+            
+        if __utf8len(part) > max_chunk_size:
+            cut_after-=increase_by
+        final_list.append(remaining[:cut_after])
+        remaining = remaining[cut_after:]
+
+    return final_list
+
+
+
+MAX_LENGTH_OVERWRITE = {
+    # japanese has a max length restriction by sudachi so the spacy max_length only applies if < sudachi
+    "ja":49149
+}
+
+def __lookup_final_max_length(nlp:Language) -> int:
+    overwrite = MAX_LENGTH_OVERWRITE.get(nlp.meta["lang"])
+    
+    if overwrite and overwrite < nlp.max_length:
+        return overwrite
+    return nlp.max_length
+
+
+# note that "H" uses up 1 byte while "私" takes 3 bytes
+# len(s) would still give 1 but this runs into issues for reserved/allocated spacy memory
+def __utf8len(s:str):
+    return len(s.encode('utf-8'))

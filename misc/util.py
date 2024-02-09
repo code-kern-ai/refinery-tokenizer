@@ -38,7 +38,7 @@ def get_docs_from_db(tbl_entry: Any, vocab: Vocab) -> Dict[str, Doc]:
     doc_bin_loaded = DocBin().from_bytes(tbl_entry.bytes)
     docs = list(doc_bin_loaded.get_docs(vocab))
     doc_dict = {}
-    for (col, doc) in zip(tbl_entry.columns, docs):
+    for col, doc in zip(tbl_entry.columns, docs):
         doc_dict[col] = doc
     return doc_dict
 

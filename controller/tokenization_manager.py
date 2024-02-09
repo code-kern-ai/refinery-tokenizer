@@ -34,6 +34,7 @@ def tokenize_calculated_attribute(
     attribute_name: str,
     include_rats: bool = True,
 ) -> None:
+    session_token = general.get_ctx_token()
     try:
         tokenization_task, tokenizer = __set_up_tokenization(
             project_id, task_id, initial_count
@@ -71,10 +72,10 @@ def tokenize_calculated_attribute(
         finalize_task(
             project_id, user_id, non_text_attributes, tokenization_task, include_rats
         )
-    except Exception as e:
+    except Exception:
         __handle_error(project_id, user_id, task_id)
     finally:
-        __wrap_up_tokenization()
+        general.remove_and_refresh_session(session_token, False)
 
 
 def tokenize_initial_project(
@@ -85,6 +86,7 @@ def tokenize_initial_project(
     only_uploaded_attributes: bool = False,
     include_rats: bool = True,
 ) -> None:
+    session_token = general.get_ctx_token()
     try:
         tokenization_task, tokenizer = __set_up_tokenization(
             project_id, task_id, initial_count
@@ -140,7 +142,7 @@ def tokenize_initial_project(
     except Exception:
         __handle_error(project_id, user_id, task_id)
     finally:
-        __wrap_up_tokenization()
+        general.remove_and_refresh_session(session_token)
 
 
 def tokenize_record(project_id: str, record_id: str) -> int:
@@ -219,7 +221,7 @@ def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
     try:
         general.rollback()
     except Exception:
-        print("couldn't rollback session", flush=True)        
+        print("couldn't rollback session", flush=True)
     project_item = project.get(project_id)
     if (
         project_item is not None
@@ -242,8 +244,3 @@ def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
         )
     else:
         print("Stopping since no project exists to complete the task", flush=True)
-
-
-def __wrap_up_tokenization() -> None:
-    session_token = general.get_ctx_token()
-    general.remove_and_refresh_session(session_token, False)

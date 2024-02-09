@@ -1,6 +1,5 @@
 from typing import Dict, Any, Optional, Union
 import requests
-import json
 import time
 from misc import daemon
 

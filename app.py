@@ -109,15 +109,6 @@ def rework_markdown_file_content(
     return responses.Response(status_code=status.HTTP_200_OK)
 
 
-# @app.exception_handler(Exception)
-# async def error_handler() -> responses.PlainTextResponse:
-#     general.rollback()
-#     return responses.PlainTextResponse(
-#         status_code=status.HTTP_400_BAD_REQUEST,
-#         content="Oops! Something went wrong. Database gets a rollback...",
-#     )
-
-
 @app.put("/config_changed")
 def config_changed() -> responses.PlainTextResponse:
     config_handler.refresh_config()

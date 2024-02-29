@@ -17,11 +17,22 @@ from submodules.model import enums
 app = FastAPI()
 
 
+@app.middleware("http")
+async def handle_db_session(request: Request, call_next):
+    session_token = general.get_ctx_token()
+
+    request.state.session_token = session_token
+    try:
+        response = await call_next(request)
+    finally:
+        general.remove_and_refresh_session(session_token)
+
+    return response
+
+
 @app.post("/tokenize_record")
 def tokenize_record(request: Request) -> responses.PlainTextResponse:
-    session_token = general.get_ctx_token()
     tokenization_manager.tokenize_record(request.project_id, request.record_id)
-    general.remove_and_refresh_session(session_token)
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
 
 
@@ -29,7 +40,6 @@ def tokenize_record(request: Request) -> responses.PlainTextResponse:
 def tokenize_calculated_attribute(
     request: AttributeTokenizationRequest,
 ) -> responses.PlainTextResponse:
-    session_token = general.get_ctx_token()
     task_manager.start_tokenization_task(
         request.project_id,
         request.user_id,
@@ -38,13 +48,11 @@ def tokenize_calculated_attribute(
         False,
         request.attribute_id,
     )
-    general.remove_and_refresh_session(session_token)
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
 
 
 @app.post("/tokenize_project")
 def tokenize_project(request: Request) -> responses.PlainTextResponse:
-    session_token = general.get_ctx_token()
     task_manager.start_tokenization_task(
         request.project_id,
         request.user_id,
@@ -52,19 +60,16 @@ def tokenize_project(request: Request) -> responses.PlainTextResponse:
         request.include_rats,
         request.only_uploaded_attributes,
     )
-    general.remove_and_refresh_session(session_token)
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
 
 
 # rats = record_attribute_token_statistics
 @app.post("/create_rats")
 def create_rats(request: RatsRequest) -> responses.PlainTextResponse:
-    session_token = general.get_ctx_token()
     attribute_id = request.attribute_id if request.attribute_id != "" else None
     task_manager.start_rats_task(
         request.project_id, request.user_id, False, attribute_id
     )
-    general.remove_and_refresh_session(session_token)
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
 
 
@@ -79,9 +84,7 @@ def tokenize_project_no_use(project_id: str) -> responses.PlainTextResponse:
 
 @app.post("/reupload_docbins")
 def reupload_docbins(request: ReuploadDocbins) -> responses.PlainTextResponse:
-    session_token = general.get_ctx_token()
     util.reupload_docbins(request.project_id)
-    general.remove_and_refresh_session(session_token)
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
 
 
@@ -95,25 +98,15 @@ def save_tokenizer_as_pickle(request: SaveTokenizer) -> responses.PlainTextRespo
 def rework_markdown_file_content(
     org_id: str, file_id: str, step: str
 ) -> responses.Response:
-    session_token = general.get_ctx_token()
     try:
         r = markdown_file_content.rework_markdown_file_content(
             org_id, file_id, step.upper()
         )
-    finally:
-        general.remove_and_refresh_session(session_token)
+    except Exception:
+        pass
     if not r:
         return responses.Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return responses.Response(status_code=status.HTTP_200_OK)
-
-
-@app.exception_handler(Exception)
-async def error_handler() -> responses.PlainTextResponse:
-    general.rollback()
-    return responses.PlainTextResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content="Oops! Something went wrong. Database gets a rollback...",
-    )
 
 
 @app.put("/config_changed")

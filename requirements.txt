@@ -58,7 +58,7 @@ idna==3.6
     #   -r requirements/common-requirements.txt
     #   anyio
     #   requests
-jinja2==3.1.2
+jinja2==3.1.3
     # via spacy
 jmespath==1.0.1
     # via

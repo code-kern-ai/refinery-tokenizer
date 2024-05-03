@@ -4,9 +4,9 @@ WORKDIR /app
 
 VOLUME ["/app"]
 
-COPY requirements.txt .
+COPY requirements*.txt .
 
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements-dev.txt
 RUN python -m spacy download en_core_web_sm
 RUN python -m spacy download de_core_news_sm
 

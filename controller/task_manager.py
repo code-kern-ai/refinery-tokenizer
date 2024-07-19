@@ -87,7 +87,7 @@ def start_rats_task(
     only_uploaded_attributes: bool = False,
     attribute_id: Optional[str] = None,
 ) -> int:
-    if tokenization.is_doc_bin_creation_running(project_id):
+    if tokenization.is_doc_bin_creation_running_or_queued(project_id, only_running=True):
         # at the end of doc bin creation rats will be calculated
         return
 

@@ -1,0 +1,21 @@
+FROM kernai/refinery-parent-images:v1.17.2-common
+
+WORKDIR /app
+
+VOLUME ["/app"]
+
+RUN apt update \
+    && apt install curl build-essential -y \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y
+
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+COPY requirements*.txt .
+
+RUN pip3 install --no-cache-dir -r requirements-dev.txt
+RUN python -m spacy download en_core_web_sm
+RUN python -m spacy download de_core_news_sm
+
+COPY / .
+
+CMD [ "/usr/local/bin/uvicorn", "--host", "0.0.0.0", "--port", "80", "app:app", "--reload" ]

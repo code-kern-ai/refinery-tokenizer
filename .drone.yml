@@ -80,6 +80,7 @@ steps:
     image: plugins/docker
     settings:
       registry: registry.dev.kern.ai
+      dockerfile: Dockerfile.arm64
       username:
         from_secret: docker_username
       password:
@@ -144,6 +145,7 @@ steps:
   - name: build and publish
     image: plugins/docker
     settings:
+      dockerfile: Dockerfile.arm64
       username:
         from_secret: dockerhub_username
       password:

@@ -54,7 +54,12 @@ def tokenize_calculated_attribute(
             record_tokenized_entries[x : x + chunk_size]
             for x in range(0, len(record_tokenized_entries), chunk_size)
         ]
+        tokenization_cancelled = False
         for idx, chunk in enumerate(chunks):
+            record_tokenization_task = tokenization.get(project_id, task_id)
+            if record_tokenization_task.state == enums.TokenizerTask.STATE_FAILED.value:
+                tokenization_cancelled = True
+                break
             values = [
                 add_attribute_to_docbin(tokenizer, record_tokenized_item)
                 for record_tokenized_item in chunk
@@ -69,9 +74,20 @@ def tokenize_calculated_attribute(
             update_tokenization_progress(
                 project_id, tokenization_task, progress_per_chunk
             )
-        finalize_task(
-            project_id, user_id, non_text_attributes, tokenization_task, include_rats
-        )
+        if not tokenization_cancelled:
+            finalize_task(
+                project_id,
+                user_id,
+                non_text_attributes,
+                tokenization_task,
+                include_rats,
+            )
+        else:
+            send_websocket_update(
+                project_id,
+                False,
+                ["docbin", "state", str(record_tokenization_task.state)],
+            )
     except Exception:
         __handle_error(project_id, user_id, task_id)
     finally:

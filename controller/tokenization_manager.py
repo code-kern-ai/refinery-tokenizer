@@ -57,7 +57,11 @@ def tokenize_calculated_attribute(
         tokenization_cancelled = False
         for idx, chunk in enumerate(chunks):
             record_tokenization_task = tokenization.get(project_id, task_id)
-            if record_tokenization_task.state == enums.TokenizerTask.STATE_FAILED.value:
+            if (
+                not record_tokenization_task
+                or record_tokenization_task.state
+                == enums.TokenizerTask.STATE_FAILED.value
+            ):
                 tokenization_cancelled = True
                 break
             values = [
@@ -135,7 +139,11 @@ def tokenize_initial_project(
         tokenization_cancelled = False
         for idx, record_chunk in enumerate(chunks):
             record_tokenization_task = tokenization.get(project_id, task_id)
-            if record_tokenization_task.state == enums.TokenizerTask.STATE_FAILED.value:
+            if (
+                not record_tokenization_task
+                or record_tokenization_task.state
+                == enums.TokenizerTask.STATE_FAILED.value
+            ):
                 tokenization_cancelled = True
                 break
             entries = []

@@ -78,7 +78,10 @@ def start_tokenization_task(
             attribute_name,
             include_rats,
         )
-    return status.HTTP_200_OK
+    record_tokenization_task_id = None
+    if task:
+        record_tokenization_task_id = task.id
+    return record_tokenization_task_id
 
 
 def start_rats_task(
@@ -87,7 +90,9 @@ def start_rats_task(
     only_uploaded_attributes: bool = False,
     attribute_id: Optional[str] = None,
 ) -> int:
-    if tokenization.is_doc_bin_creation_running_or_queued(project_id, only_running=True):
+    if tokenization.is_doc_bin_creation_running_or_queued(
+        project_id, only_running=True
+    ):
         # at the end of doc bin creation rats will be calculated
         return
 
@@ -102,9 +107,11 @@ def start_rats_task(
             project_id,
             user_id,
             enums.TokenizerTask.TYPE_TOKEN_STATISTICS.value,
-            scope=enums.RecordTokenizationScope.ATTRIBUTE.value
-            if attribute_id
-            else enums.RecordTokenizationScope.PROJECT.value,
+            scope=(
+                enums.RecordTokenizationScope.ATTRIBUTE.value
+                if attribute_id
+                else enums.RecordTokenizationScope.PROJECT.value
+            ),
             attribute_name=attribute_name,
             with_commit=True,
         )

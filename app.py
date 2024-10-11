@@ -40,7 +40,7 @@ def tokenize_record(request: Request) -> responses.PlainTextResponse:
 def tokenize_calculated_attribute(
     request: AttributeTokenizationRequest,
 ) -> responses.PlainTextResponse:
-    task_manager.start_tokenization_task(
+    record_tokenization_task_id = task_manager.start_tokenization_task(
         request.project_id,
         request.user_id,
         enums.TokenizationTaskTypes.ATTRIBUTE.value,
@@ -48,19 +48,25 @@ def tokenize_calculated_attribute(
         False,
         request.attribute_id,
     )
-    return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
+    return responses.JSONResponse(
+        content={"tokenization_task_id": str(record_tokenization_task_id)},
+        status_code=status.HTTP_200_OK,
+    )
 
 
 @app.post("/tokenize_project")
 def tokenize_project(request: Request) -> responses.PlainTextResponse:
-    task_manager.start_tokenization_task(
+    record_tokenization_task_id = task_manager.start_tokenization_task(
         request.project_id,
         request.user_id,
         enums.TokenizationTaskTypes.PROJECT.value,
         request.include_rats,
         request.only_uploaded_attributes,
     )
-    return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
+    return responses.JSONResponse(
+        content={"tokenization_task_id": str(record_tokenization_task_id)},
+        status_code=status.HTTP_200_OK,
+    )
 
 
 # rats = record_attribute_token_statistics

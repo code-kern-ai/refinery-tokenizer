@@ -13,6 +13,7 @@ from request_classes import (
 )
 from submodules.model.business_objects import general
 from submodules.model import enums
+from submodules.model import session
 
 app = FastAPI()
 
@@ -133,3 +134,8 @@ def healthcheck() -> responses.PlainTextResponse:
     if not text:
         text = "OK"
     return responses.PlainTextResponse(text, status_code=status_code)
+
+
+
+
+session.start_session_cleanup_thread()

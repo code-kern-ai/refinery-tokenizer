@@ -1,7 +1,7 @@
 from fastapi import FastAPI, responses, status
 
 
-from controller import task_manager, tokenization_manager, markdown_file_content
+from controller import task_manager, tokenization_manager
 from misc import util
 from handler import config_handler, tokenizer_handler
 from request_classes import (
@@ -99,21 +99,6 @@ def reupload_docbins(request: ReuploadDocbins) -> responses.PlainTextResponse:
 def save_tokenizer_as_pickle(request: SaveTokenizer) -> responses.PlainTextResponse:
     tokenizer_handler.save_tokenizer_as_pickle(request.config_string, request.overwrite)
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
-
-
-@app.put("/cognition/rework-content/{org_id}/{file_id}/{step}")
-def rework_markdown_file_content(
-    org_id: str, file_id: str, step: str
-) -> responses.Response:
-    try:
-        r = markdown_file_content.rework_markdown_file_content(
-            org_id, file_id, step.upper()
-        )
-    except Exception:
-        pass
-    if not r:
-        return responses.Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    return responses.Response(status_code=status.HTTP_200_OK)
 
 
 @app.put("/config_changed")

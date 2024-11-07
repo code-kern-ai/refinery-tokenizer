@@ -1,7 +1,7 @@
 from fastapi import FastAPI, responses, status
 
 
-from controller import task_manager, tokenization_manager, markdown_file_content
+from controller import task_manager, tokenization_manager
 from misc import util
 from handler import config_handler, tokenizer_handler
 from request_classes import (
@@ -13,6 +13,7 @@ from request_classes import (
 )
 from submodules.model.business_objects import general
 from submodules.model import enums
+from submodules.model import session
 
 app = FastAPI()
 
@@ -40,7 +41,7 @@ def tokenize_record(request: Request) -> responses.PlainTextResponse:
 def tokenize_calculated_attribute(
     request: AttributeTokenizationRequest,
 ) -> responses.PlainTextResponse:
-    task_manager.start_tokenization_task(
+    record_tokenization_task_id = task_manager.start_tokenization_task(
         request.project_id,
         request.user_id,
         enums.TokenizationTaskTypes.ATTRIBUTE.value,
@@ -48,19 +49,25 @@ def tokenize_calculated_attribute(
         False,
         request.attribute_id,
     )
-    return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
+    return responses.JSONResponse(
+        content={"tokenization_task_id": str(record_tokenization_task_id)},
+        status_code=status.HTTP_200_OK,
+    )
 
 
 @app.post("/tokenize_project")
 def tokenize_project(request: Request) -> responses.PlainTextResponse:
-    task_manager.start_tokenization_task(
+    record_tokenization_task_id = task_manager.start_tokenization_task(
         request.project_id,
         request.user_id,
         enums.TokenizationTaskTypes.PROJECT.value,
         request.include_rats,
         request.only_uploaded_attributes,
     )
-    return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
+    return responses.JSONResponse(
+        content={"tokenization_task_id": str(record_tokenization_task_id)},
+        status_code=status.HTTP_200_OK,
+    )
 
 
 # rats = record_attribute_token_statistics
@@ -94,21 +101,6 @@ def save_tokenizer_as_pickle(request: SaveTokenizer) -> responses.PlainTextRespo
     return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
 
 
-@app.put("/cognition/rework-content/{org_id}/{file_id}/{step}")
-def rework_markdown_file_content(
-    org_id: str, file_id: str, step: str
-) -> responses.Response:
-    try:
-        r = markdown_file_content.rework_markdown_file_content(
-            org_id, file_id, step.upper()
-        )
-    except Exception:
-        pass
-    if not r:
-        return responses.Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    return responses.Response(status_code=status.HTTP_200_OK)
-
-
 @app.put("/config_changed")
 def config_changed() -> responses.PlainTextResponse:
     config_handler.refresh_config()
@@ -127,3 +119,8 @@ def healthcheck() -> responses.PlainTextResponse:
     if not text:
         text = "OK"
     return responses.PlainTextResponse(text, status_code=status_code)
+
+
+
+
+session.start_session_cleanup_thread()

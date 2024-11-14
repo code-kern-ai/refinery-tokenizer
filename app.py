@@ -121,6 +121,4 @@ def healthcheck() -> responses.PlainTextResponse:
     return responses.PlainTextResponse(text, status_code=status_code)
 
 
-
-
 session.start_session_cleanup_thread()

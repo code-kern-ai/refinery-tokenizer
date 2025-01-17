@@ -1,9 +1,6 @@
 #!/bin/bash
 trap "echo -ne '\nstopping container...' && docker stop refinery-tokenizer > /dev/null 2>&1 && echo -ne '\t\t [done]\n'" EXIT
 
-
-source check_config_service
-
 HIDE_BUILD=0
 while getopts :s flag
 do

@@ -17,23 +17,10 @@ fi
 
 trap "echo -ne '\nstopping container...' && docker stop refinery-tokenizer > /dev/null 2>&1 && echo -ne '\t\t [done]\n'" EXIT
 
-HIDE_BUILD=0
-while getopts :s flag
-do
-    case "${flag}" in
-        s) HIDE_BUILD=1;;
-    esac
-done
-
 HOST_IP=$(docker network inspect bridge --format='{{json .IPAM.Config}}' | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | tail -1)
 
 echo -ne 'stopping old container...'
-if [ $HIDE_BUILD -eq 1 ]
-then
-  docker stop refinery-tokenizer > /dev/null 2>&1
-else
-  docker stop refinery-tokenizer
-fi
+docker stop refinery-tokenizer > /dev/null 2>&1
 echo -ne '\t\t [done]\n'
 
 INFERENCE_DIR=${PWD%/*}/dev-setup/inference/
@@ -51,12 +38,7 @@ then
 fi
 
 echo -ne 'building container...'
-if [ $HIDE_BUILD -eq 1 ]
-then
-  docker build -t refinery-tokenizer-dev -f dev.Dockerfile . > /dev/null 2>&1
-else
-  docker build -t refinery-tokenizer-dev -f dev.Dockerfile .
-fi
+docker build -t refinery-tokenizer-dev -f dev.Dockerfile .
 echo -ne '\t\t [done]\n'
 
 echo -ne 'starting...'

@@ -131,4 +131,5 @@ dmypy.json
 .idea/
 
 # Visual Studio code
-.vscode
+.vscode/*
+!.vscode/launch.json

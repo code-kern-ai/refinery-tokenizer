@@ -1,23 +1,26 @@
 #!/bin/bash
-trap "echo -ne '\nstopping container...' && docker stop refinery-tokenizer > /dev/null 2>&1 && echo -ne '\t\t [done]\n'" EXIT
 
-HIDE_BUILD=0
-while getopts :s flag
+DEBUG_MODE=false
+DEBUG_PORT=15671
+
+while getopts d flag
 do
     case "${flag}" in
-        s) HIDE_BUILD=1;;
+        d) DEBUG_MODE=true;;
     esac
 done
+
+CMD=""
+if [ $DEBUG_MODE = true ]; then
+    CMD="debugpy --wait-for-client --listen 0.0.0.0:$DEBUG_PORT -m uvicorn app:app --host 0.0.0.0 --port 80 --reload"
+fi
+
+trap "echo -ne '\nstopping container...' && docker stop refinery-tokenizer > /dev/null 2>&1 && echo -ne '\t\t [done]\n'" EXIT
 
 HOST_IP=$(docker network inspect bridge --format='{{json .IPAM.Config}}' | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | tail -1)
 
 echo -ne 'stopping old container...'
-if [ $HIDE_BUILD -eq 1 ]
-then
-  docker stop refinery-tokenizer > /dev/null 2>&1
-else
-  docker stop refinery-tokenizer
-fi
+docker stop refinery-tokenizer > /dev/null 2>&1
 echo -ne '\t\t [done]\n'
 
 INFERENCE_DIR=${PWD%/*}/dev-setup/inference/
@@ -35,17 +38,13 @@ then
 fi
 
 echo -ne 'building container...'
-if [ $HIDE_BUILD -eq 1 ]
-then
-  docker build -t refinery-tokenizer-dev -f dev.Dockerfile . > /dev/null 2>&1
-else
-  docker build -t refinery-tokenizer-dev -f dev.Dockerfile .
-fi
+docker build -t refinery-tokenizer-dev -f dev.Dockerfile .
 echo -ne '\t\t [done]\n'
 
 echo -ne 'starting...'
 docker run -d --rm \
 --name refinery-tokenizer \
+-p $DEBUG_PORT:$DEBUG_PORT \
 -p 7061:80 \
 -e S3_ENDPOINT_LOCAL=object-storage:9000 \
 -e S3_ACCESS_KEY=kern \
@@ -56,6 +55,10 @@ docker run -d --rm \
 --mount type=bind,source="$(pwd)"/,target=/app \
 -v /var/run/docker.sock:/var/run/docker.sock \
 --network dev-setup_default \
-refinery-tokenizer-dev > /dev/null 2>&1
+refinery-tokenizer-dev $CMD > /dev/null 2>&1
 echo -ne '\t\t\t [done]\n'
+
+if [ $DEBUG_MODE = true ]; then
+    echo -e "\033[0;33muse VSCode Debugger (Python Debugger: refinery-tokenizer) to start the service\033[0m"
+fi
 docker logs -f refinery-tokenizer

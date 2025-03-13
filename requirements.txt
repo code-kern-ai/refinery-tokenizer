@@ -8,7 +8,7 @@ annotated-types==0.7.0
     # via
     #   -r requirements/common-requirements.txt
     #   pydantic
-anyio==4.6.2.post1
+anyio==4.8.0
     # via
     #   -r requirements/common-requirements.txt
     #   starlette
@@ -26,16 +26,16 @@ catalogue==2.0.10
     #   spacy
     #   srsly
     #   thinc
-certifi==2024.8.30
+certifi==2025.1.31
     # via
     #   -r requirements/common-requirements.txt
     #   minio
     #   requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via
     #   -r requirements/common-requirements.txt
     #   requests
-click==8.1.7
+click==8.1.8
     # via
     #   -r requirements/common-requirements.txt
     #   typer
@@ -132,7 +132,7 @@ python-dateutil==2.9.0.post0
     #   -r requirements/common-requirements.txt
     #   botocore
     #   pandas
-pytz==2024.2
+pytz==2025.1
     # via
     #   -r requirements/common-requirements.txt
     #   pandas
@@ -149,7 +149,7 @@ s3transfer==0.6.2
     #   boto3
 shellingham==1.5.4
     # via typer
-six==1.16.0
+six==1.17.0
     # via
     #   -r requirements/common-requirements.txt
     #   python-dateutil

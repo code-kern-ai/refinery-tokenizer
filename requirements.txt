@@ -52,13 +52,13 @@ click==8.2.1
     #   -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
     #   typer
     #   uvicorn
-cloudpathlib==0.18.1
+cloudpathlib==0.21.1
     # via weasel
 confection==0.1.5
     # via
     #   thinc
     #   weasel
-cymem==2.0.8
+cymem==2.0.11
     # via
     #   preshed
     #   spacy
@@ -76,28 +76,28 @@ idna==3.10
     #   -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
     #   anyio
     #   requests
-jinja2==3.1.4
+jinja2==3.1.6
     # via spacy
 jmespath==1.0.1
     # via
     #   -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
     #   boto3
     #   botocore
-langcodes==3.4.0
+langcodes==3.5.0
     # via spacy
-language-data==1.2.0
+language-data==1.3.0
     # via langcodes
-marisa-trie==1.2.0
+marisa-trie==1.2.1
     # via language-data
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
 minio==7.2.15
     # via -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
-murmurhash==1.0.10
+murmurhash==1.0.13
     # via
     #   preshed
     #   spacy
@@ -109,14 +109,14 @@ numpy==1.23.4
     #   pandas
     #   spacy
     #   thinc
-packaging==24.1
+packaging==25.0
     # via
     #   spacy
     #   thinc
     #   weasel
 pandas==1.5.1
     # via -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
-preshed==3.0.9
+preshed==3.0.10
     # via
     #   spacy
     #   thinc
@@ -143,7 +143,7 @@ pydantic-core==2.18.4
     # via
     #   -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
     #   pydantic
-pygments==2.18.0
+pygments==2.19.2
     # via rich
 python-dateutil==2.9.0.post0
     # via
@@ -159,7 +159,7 @@ requests==2.32.4
     #   -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
     #   spacy
     #   weasel
-rich==13.7.1
+rich==14.0.0
     # via typer
 s3transfer==0.13.0
     # via
@@ -171,7 +171,7 @@ six==1.17.0
     # via
     #   -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
     #   python-dateutil
-smart-open==7.0.4
+smart-open==7.3.0.post1
     # via weasel
 sniffio==1.3.1
     # via
@@ -185,7 +185,7 @@ spacy-loggers==1.0.5
     # via spacy
 sqlalchemy==1.4.42
     # via -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
-srsly==2.4.8
+srsly==2.5.1
     # via
     #   confection
     #   spacy
@@ -195,17 +195,17 @@ starlette==0.40.0
     # via
     #   -r /home/runner/work/refinery-submodule-parent-images/refinery-submodule-parent-images/refinery-tokenizer/requirements/common-requirements.txt
     #   fastapi
-sudachidict-core==20240409
+sudachidict-core==20250515
     # via spacy
-sudachipy==0.6.8
+sudachipy==0.6.10
     # via
     #   spacy
     #   sudachidict-core
 thinc==8.2.5
     # via spacy
-tqdm==4.66.4
+tqdm==4.67.1
     # via spacy
-typer==0.12.3
+typer==0.16.0
     # via
     #   spacy
     #   weasel
@@ -233,7 +233,7 @@ wasabi==1.1.3
     #   weasel
 weasel==0.4.1
     # via spacy
-wrapt==1.16.0
+wrapt==1.17.2
     # via smart-open
 
 # The following packages are considered to be unsafe in a requirements file:

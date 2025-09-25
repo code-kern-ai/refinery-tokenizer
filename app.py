@@ -1,3 +1,5 @@
+import os
+import logging
 from fastapi import FastAPI, responses, status
 
 
@@ -14,8 +16,24 @@ from request_classes import (
 from submodules.model.business_objects import general
 from submodules.model import enums
 from submodules.model import session
+from submodules.model import telemetry
 
-app = FastAPI()
+
+OTLP_GRPC_ENDPOINT = os.getenv("OTLP_GRPC_ENDPOINT", "tempo:4317")
+
+app_name = "refinery-tokenizer"
+app = FastAPI(title=app_name)
+
+if telemetry.ENABLE_TELEMETRY:
+    print("WARNING:  Running telemetry.", flush=True)
+    telemetry.setting_otlp(app, app_name=app_name, endpoint=OTLP_GRPC_ENDPOINT)
+    app.add_middleware(telemetry.PrometheusMiddleware, app_name=app_name)
+    app.add_route("/metrics", telemetry.metrics)
+
+    # Filter out /metrics
+    logging.getLogger("uvicorn.access").addFilter(
+        lambda record: "GET /metrics" not in record.getMessage()
+    )
 
 
 @app.middleware("http")

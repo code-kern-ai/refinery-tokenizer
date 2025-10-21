@@ -4,11 +4,11 @@ from controller.tokenization_manager import (
     tokenize_calculated_attribute,
     tokenize_initial_project,
 )
-from submodules.model import enums
+from submodules.model import enums, daemon
 from submodules.model.business_objects import attribute, general, notification, record
 from submodules.model.business_objects import tokenization
 from submodules.model.business_objects.tokenization import create_tokenization_task
-from misc import daemon, notification as notification_util
+from misc import notification as notification_util
 from submodules.model.models import RecordTokenizationTask
 from fastapi import status
 
@@ -48,7 +48,7 @@ def start_tokenization_task(
             task = set_up_tokenization_task(
                 project_id, user_id, enums.RecordTokenizationScope.PROJECT.value
             )
-            daemon.run(
+            daemon.run_without_db_token(
                 tokenize_initial_project,
                 project_id,
                 user_id,
@@ -69,7 +69,7 @@ def start_tokenization_task(
             enums.RecordTokenizationScope.ATTRIBUTE.value,
             attribute_name,
         )
-        daemon.run(
+        daemon.run_without_db_token(
             tokenize_calculated_attribute,
             project_id,
             user_id,
@@ -115,7 +115,7 @@ def start_rats_task(
             attribute_name=attribute_name,
             with_commit=True,
         )
-        daemon.run(
+        daemon.run_without_db_token(
             create_rats_entries,
             project_id,
             user_id,

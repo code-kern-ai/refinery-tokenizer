@@ -3,8 +3,7 @@ import traceback
 from datetime import datetime
 from typing import Optional
 
-from misc import daemon
-from submodules.model import enums
+from submodules.model import enums, daemon
 from misc.notification import (
     send_notification_created,
 )
@@ -42,7 +41,7 @@ def trigger_rats_creation(
         attribute_name=tokenization_task.attribute_name,
         with_commit=True,
     )
-    daemon.run(
+    daemon.run_without_db_token(
         create_rats_entries,
         project_id,
         user_id,

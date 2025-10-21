@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional, Union
 import requests
 import time
-from misc import daemon
+from submodules.model import daemon
 
 __config = None
 
@@ -25,7 +25,7 @@ def refresh_config():
         )
     global __config
     __config = response.json()
-    daemon.run(invalidate_after, 3600)  # one hour
+    daemon.run_without_db_token(invalidate_after, 3600)  # one hour
 
 
 def get_config_value(

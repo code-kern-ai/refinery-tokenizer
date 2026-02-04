@@ -1,0 +1,66 @@
+---
+description: Rules for working with Git submodules (model and s3)
+alwaysApply: true
+---
+
+# Submodules Guidelines
+
+## Critical Rule
+
+**BEFORE modifying code in `submodules/`, check the submodule's `.cursor/rules/` directory first.**
+
+- `submodules/model/.cursor/rules/` - Database models, business objects, enums, database operations
+- `submodules/s3/.cursor/rules/` - S3 storage operations
+
+Do NOT duplicate submodule rules in parent repository rules.
+
+## Import Patterns
+
+**From model submodule:**
+```python
+from submodules.model.business_objects import project, record
+from submodules.model import enums, Project, Record
+from submodules.model.util import sql_alchemy_to_dict
+from submodules.model.exceptions import EntityNotFoundException
+from submodules.model.session_wrapper import run_db_async_with_session
+```
+
+**From S3 submodule:**
+```python
+from submodules.s3 import controller as s3
+s3.put_object(bucket, object_name, data)
+s3.get_object(bucket, object_name)
+```
+
+## When to Modify Submodules
+
+**Modify when**: Adding data layer logic, new database operations, new S3 operations.
+
+**Don't modify when**: Change belongs in gateway code (routes/controllers), just using existing functionality.
+
+## Database Schema Changes
+
+**When adding new tables or columns** in `submodules/model`:
+
+1. Make changes in `submodules/model/models.py` (add entity class or modify columns)
+2. Update `submodules/model/enums.py` if adding a new table (add to `Tablenames` enum)
+3. Create migration: `./db commit "Description of changes"` (must be run from `refinery-gateway` root)
+4. Apply migration: `./db migrate` (must be run from `refinery-gateway` root)
+
+**Important**: Database migrations MUST be done only from `refinery-gateway` root directory, not from within the submodule.
+
+**This is mandatory** - schema changes require both `commit` and `migrate` steps. See `submodules/model/.cursor/rules/entities.mdc` for detailed migration guidelines.
+
+## Common Patterns
+
+```python
+# Business objects
+project = project.get(project_id)
+new_project = project.create(name="...", organization_id=org_id, with_commit=True)
+project.update(project_id, {"name": "..."}, with_commit=True)
+
+# S3 operations
+if s3.bucket_exists(bucket_name):
+    s3.put_object(bucket_name, object_name, json_data)
+    url = s3.create_access_link(bucket_name, object_name)
+```

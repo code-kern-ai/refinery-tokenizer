@@ -1,0 +1,121 @@
+---
+description: Rules for middleware and request processing
+globs: ["app.py"]
+alwaysApply: true
+---
+
+# Middleware Guidelines
+
+Middleware handles cross-cutting concerns: database session management. The middleware is defined directly in `app.py`.
+
+## Database Session Management
+
+Sessions are managed automatically by middleware in `app.py`. Never create SQLAlchemy sessions directly in routes.
+
+**Middleware implementation:**
+```python
+from fastapi import FastAPI, Request
+from submodules.model.business_objects import general
+
+@app.middleware("http")
+async def handle_db_session(request: Request, call_next):
+    session_token = general.get_ctx_token()
+    
+    request.state.session_token = session_token
+    try:
+        response = await call_next(request)
+    finally:
+        general.remove_and_refresh_session(session_token)
+    
+    return response
+```
+
+## Request State
+
+Middleware sets `request.state` with session token:
+
+```python
+from fastapi import Request
+
+@app.post("/tokenize_record")
+def tokenize_record(request: Request):
+    # Session token is available via request.state.session_token
+    # But typically you'll use general.get_ctx_token() in controllers
+    session_token = request.state.session_token
+    # Use general.get_ctx_token() in controllers for consistency
+```
+
+## Session Management in Controllers
+
+Controllers manage their own sessions for long-running operations:
+
+```python
+from submodules.model.business_objects import general
+
+def tokenize_initial_project(
+    project_id: str,
+    user_id: str,
+    task_id: str,
+    initial_count: int,
+) -> None:
+    session_token = general.get_ctx_token()
+    try:
+        # Long-running tokenization logic
+        pass
+    except Exception:
+        __handle_error(project_id, user_id, task_id)
+    finally:
+        general.remove_and_refresh_session(session_token)
+```
+
+## Session Refresh During Long Operations
+
+For very long operations, refresh sessions periodically:
+
+```python
+def create_rats_entries(
+    project_id: str,
+    user_id: str,
+    task_id: str,
+    initial_count: int,
+) -> None:
+    session_token = general.get_ctx_token()
+    try:
+        chunk = 0
+        while record_set:
+            # Process records
+            if chunk % 20 == 0:
+                # Refresh session periodically to prevent timeout
+                session_token = general.remove_and_refresh_session(session_token, True)
+            chunk += 1
+    finally:
+        general.remove_and_refresh_session(session_token, False)
+```
+
+## Error Handling
+
+Middleware doesn't catch exceptions - let them propagate to FastAPI's error handling:
+
+```python
+@app.middleware("http")
+async def handle_db_session(request: Request, call_next):
+    session_token = general.get_ctx_token()
+    request.state.session_token = session_token
+    try:
+        response = await call_next(request)
+    finally:
+        # Always cleanup session, even if exception occurs
+        general.remove_and_refresh_session(session_token)
+    return response
+```
+
+## Best Practices
+
+1. Never create SQLAlchemy sessions directly - use `general.get_ctx_token()` and `general.remove_and_refresh_session()`
+2. Always cleanup resources in `finally` blocks
+3. Use `request.state.session_token` if needed, but prefer `general.get_ctx_token()` in controllers
+4. Refresh sessions periodically in long-running operations (every 20 chunks)
+5. Keep middleware lightweight - only handle session management
+6. Let exceptions propagate - don't catch them in middleware
+7. Use `general.remove_and_refresh_session(session_token, False)` for final cleanup
+8. Use `general.remove_and_refresh_session(session_token, True)` for periodic refresh during long operations

@@ -1,0 +1,117 @@
+---
+description: Rules for Pydantic models and request/response validation
+globs: ["request_classes.py"]
+alwaysApply: true
+---
+
+# API Models Guidelines
+
+Pydantic models validate request bodies and ensure type safety. All request models are defined in `request_classes.py`.
+
+## Model Definition
+
+**Basic structure:**
+```python
+from pydantic import BaseModel
+
+class Request(BaseModel):
+    project_id: str
+    record_id: str
+    user_id: str
+    include_rats: bool
+    only_uploaded_attributes: bool
+
+class AttributeTokenizationRequest(BaseModel):
+    project_id: str
+    user_id: str
+    attribute_id: str
+    include_rats: bool
+
+class RatsRequest(BaseModel):
+    project_id: str
+    user_id: str
+    attribute_id: str
+
+class SaveTokenizer(BaseModel):
+    config_string: str
+    overwrite: bool = False
+```
+
+## Naming Conventions
+
+- Request models: `Request`, `AttributeTokenizationRequest`, `RatsRequest`, `SaveTokenizer`
+- Use descriptive names that clearly indicate the request purpose
+- Use `Request` suffix for endpoint-specific requests
+- Use descriptive names for utility requests (e.g., `SaveTokenizer`, `ReuploadDocbins`)
+
+## Usage in Routes
+
+```python
+from request_classes import Request, AttributeTokenizationRequest, SaveTokenizer
+
+@app.post("/tokenize_record")
+def tokenize_record(request: Request) -> responses.PlainTextResponse:
+    tokenization_manager.tokenize_record(request.project_id, request.record_id)
+    return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
+
+@app.post("/tokenize_calculated_attribute")
+def tokenize_calculated_attribute(
+    request: AttributeTokenizationRequest,
+) -> responses.JSONResponse:
+    record_tokenization_task_id = task_manager.start_tokenization_task(
+        request.project_id,
+        request.user_id,
+        enums.TokenizationTaskTypes.ATTRIBUTE.value,
+        request.include_rats,
+        False,
+        request.attribute_id,
+    )
+    return responses.JSONResponse(
+        content={"tokenization_task_id": str(record_tokenization_task_id)},
+        status_code=status.HTTP_200_OK,
+    )
+```
+
+## Field Validation
+
+```python
+from pydantic import field_validator, Field
+
+class AttributeTokenizationRequest(BaseModel):
+    project_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    attribute_id: str = Field(min_length=1)
+    include_rats: bool = False
+    
+    @field_validator('project_id', 'user_id', 'attribute_id')
+    @classmethod
+    def validate_ids(cls, v):
+        if not v or not v.strip():
+            raise ValueError('ID cannot be empty')
+        return v.strip()
+```
+
+## Common Patterns
+
+**Optional fields with defaults:**
+```python
+class SaveTokenizer(BaseModel):
+    config_string: str
+    overwrite: bool = False  # Default value for optional boolean
+```
+
+**Simple request models:**
+```python
+class ReuploadDocbins(BaseModel):
+    project_id: str  # Single field requests are acceptable
+```
+
+## Best Practices
+
+1. Use standard Python types (`str`, `int`, `bool`) - Pydantic handles validation
+2. Provide defaults for optional fields using `= default_value`
+3. Use descriptive model names that match their purpose
+4. Keep models simple and focused on request data
+5. Use proper type hints for all fields
+6. Group related request models in `request_classes.py`
+7. Use `bool` defaults explicitly (e.g., `overwrite: bool = False`)

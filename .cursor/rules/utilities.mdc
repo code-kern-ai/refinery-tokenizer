@@ -1,0 +1,109 @@
+---
+description: Rules for utility functions and helper modules
+globs: ["misc/**/*.py"]
+alwaysApply: true
+---
+
+# Utilities Guidelines
+
+Utilities contain reusable, stateless helper functions. All utilities are in the `misc/` directory.
+
+## Common Utilities
+
+**WebSocket notifications:**
+```python
+from misc.util import send_websocket_update
+from misc.notification import send_notification_created, send_project_update
+
+# Send immediate update
+send_websocket_update(project_id, False, ["docbin", "state", str(state)])
+
+# Send throttled update
+send_websocket_update(project_id, True, ["rats", "progress", str(progress)])
+
+# Send notification created event
+send_notification_created(project_id, user_id, False)
+```
+
+**S3 upload utilities:**
+```python
+from misc.util import upload_to_minio_after_every_10th_chunk, put_data_in_minio_bucket
+
+# Upload after every 10th chunk
+upload_to_minio_after_every_10th_chunk(chunk_idx, project_id, non_text_attributes)
+
+# Put data in MinIO bucket
+put_data_in_minio_bucket(project_id, missing_columns)
+```
+
+**DocBin utilities:**
+```python
+from misc.util import get_docs_from_db
+
+# Get docs from database record
+vocab = get_tokenizer_by_project(project_id).vocab
+docs = get_docs_from_db(record_item, vocab)
+```
+
+**Attribute utilities:**
+```python
+from misc.util import get_attribute_names_string
+
+# Convert attribute names list to SQL string format
+attribute_names_str = get_attribute_names_string(["attr1", "attr2"])
+# Returns: '{"attr1","attr2"}'
+```
+
+**Migration utilities:**
+```python
+from misc.util import get_migration_user
+
+# Get migration user ID
+user_id = get_migration_user()
+```
+
+**Reupload utilities:**
+```python
+from misc.util import reupload_docbins
+
+# Reupload docbins for project
+reupload_docbins(project_id)
+```
+
+## Notification Patterns
+
+**Notification sending:**
+```python
+from misc.notification import (
+    send_notification_created,
+    send_project_update,
+    send_project_update_throttle,
+)
+
+# Send notification created event
+send_notification_created(project_id, user_id, throttle=False)
+
+# Send project update (immediate)
+send_project_update(project_id, message, is_global=False)
+
+# Send project update (throttled)
+send_project_update_throttle(project_id, message, is_global=False)
+```
+
+## Best Practices
+
+1. Keep utilities stateless and reusable
+2. Use type hints for all functions
+3. Document with docstrings
+4. Single responsibility per function
+5. Avoid side effects when possible (except for notification/upload utilities)
+6. Make functions easily testable
+7. Group related utilities in the same module
+8. Use descriptive function names that indicate their purpose
+
+## Utility vs Controller vs Handler
+
+- **Utilities** (`misc/`): Pure transformations, formatting, notifications, S3 uploads, WebSocket updates
+- **Controllers** (`controller/`): Business logic requiring database access, tokenization orchestration
+- **Handlers** (`handler/`): Service-specific operations (tokenizer loading, config management)
+- **Routes** (`app.py`): HTTP handling, input validation, response formatting

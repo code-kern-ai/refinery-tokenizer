@@ -1,0 +1,246 @@
+---
+description: Rules for controller modules and business logic
+globs: ["controller/**/*.py"]
+alwaysApply: true
+---
+
+# Controllers Guidelines
+
+Controllers contain business logic and orchestrate operations between routes, submodules, and external services.
+
+## Import Patterns
+
+```python
+# Submodules
+from submodules.model.business_objects import (
+    attribute,
+    general,
+    notification,
+    project,
+    record,
+    tokenization,
+)
+from submodules.model import enums
+from submodules.model.models import RecordTokenizationTask
+from submodules.model.exceptions import EntityNotFoundException
+from submodules.s3 import controller as s3
+
+# Other controllers
+from controller.tokenizer import tokenize_record as tokenize_single_record
+from controller.task_util import (
+    finalize_task,
+    set_task_to_started,
+    update_tokenization_progress,
+)
+
+# Handlers
+from handler.tokenizer_handler import get_tokenizer_by_project
+
+# Utilities
+from misc.util import send_websocket_update, upload_to_minio_after_every_10th_chunk
+from misc.notification import send_notification_created
+```
+
+## Function Patterns
+
+**Tokenization operations:**
+```python
+def tokenize_record(project_id: str, record_id: str) -> int:
+    if record.has_byte_data(project_id, record_id):
+        return 200
+    
+    try:
+        text_attributes = attribute.get_text_attributes(
+            project_id,
+            state_filter=[
+                enums.AttributeState.UPLOADED.value,
+                enums.AttributeState.USABLE.value,
+                enums.AttributeState.RUNNING.value,
+            ],
+        )
+        tokenizer = get_tokenizer_by_project(project_id)
+        record_item = record.get(project_id, record_id)
+        entry = tokenize_single_record(
+            project_id, tokenizer, record_item, text_attributes, update_statistic=True
+        )
+        general.add(entry)
+        general.commit()
+        return 200
+    except Exception:
+        print(traceback.format_exc(), flush=True)
+        return 418
+```
+
+**Long-running tokenization tasks:**
+```python
+def tokenize_initial_project(
+    project_id: str,
+    user_id: str,
+    task_id: str,
+    initial_count: int,
+    only_uploaded_attributes: bool = False,
+    include_rats: bool = True,
+) -> None:
+    session_token = general.get_ctx_token()
+    try:
+        tokenization_task, tokenizer = __set_up_tokenization(
+            project_id, task_id, initial_count
+        )
+        text_attributes = attribute.get_text_attributes(project_id).keys()
+        non_text_attributes = attribute.get_non_text_attributes(project_id).keys()
+        
+        full_count = record.count_records_without_tokenization(project_id)
+        chunk_size, progress_per_chunk = __get_chunk_size_and_progress_per_chunk(
+            full_count
+        )
+        records = record.get_records_without_tokenization(project_id)
+        chunks = [
+            records[x : x + chunk_size] for x in range(0, len(records), chunk_size)
+        ]
+        
+        for idx, record_chunk in enumerate(chunks):
+            entries = []
+            for record_item in record_chunk:
+                entries.append(
+                    tokenize_single_record(
+                        project_id, tokenizer, record_item, text_attributes
+                    )
+                )
+            general.add_all(entries)
+            upload_to_minio_after_every_10th_chunk(idx, project_id, non_text_attributes)
+            update_tokenization_progress(
+                project_id, tokenization_task, progress_per_chunk
+            )
+        
+        finalize_task(
+            project_id,
+            user_id,
+            non_text_attributes,
+            tokenization_task,
+            include_rats,
+            only_uploaded_attributes,
+        )
+    except Exception:
+        __handle_error(project_id, user_id, task_id)
+    finally:
+        general.remove_and_refresh_session(session_token)
+```
+
+## Business Logic Patterns
+
+**Session management:**
+```python
+def tokenize_calculated_attribute(
+    project_id: str,
+    user_id: str,
+    task_id: str,
+    initial_count: int,
+    attribute_name: str,
+    include_rats: bool = True,
+) -> None:
+    session_token = general.get_ctx_token()
+    try:
+        # Tokenization logic
+        pass
+    except Exception:
+        __handle_error(project_id, user_id, task_id)
+    finally:
+        general.remove_and_refresh_session(session_token, False)
+```
+
+**Chunk processing:**
+```python
+def __get_chunk_size_and_progress_per_chunk(full_count: int) -> Tuple[int, float]:
+    chunk_size = 500
+    progress_per_chunk = round(chunk_size / full_count, 3)
+    return chunk_size, progress_per_chunk
+
+# Process in chunks
+chunks = [
+    records[x : x + chunk_size] for x in range(0, len(records), chunk_size)
+]
+for idx, chunk in enumerate(chunks):
+    # Process chunk
+    upload_to_minio_after_every_10th_chunk(idx, project_id, non_text_attributes)
+    update_tokenization_progress(project_id, tokenization_task, progress_per_chunk)
+```
+
+**Task cancellation checking:**
+```python
+for idx, chunk in enumerate(chunks):
+    record_tokenization_task = tokenization.get(project_id, task_id)
+    if (
+        not record_tokenization_task
+        or record_tokenization_task.state
+        == enums.TokenizerTask.STATE_FAILED.value
+    ):
+        tokenization_cancelled = True
+        break
+    # Process chunk
+```
+
+**Error handling:**
+```python
+def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
+    try:
+        general.rollback()
+    except Exception:
+        print("couldn't rollback session", flush=True)
+    
+    project_item = project.get(project_id)
+    if (
+        project_item is not None
+        and project_item.status != enums.ProjectStatus.IN_DELETION.value
+    ):
+        tokenization_task = tokenization.get(project_id, task_id)
+        print(traceback.format_exc(), flush=True)
+        tokenization_task.state = enums.TokenizerTask.STATE_FAILED.value
+        notification.create(
+            project_id,
+            user_id,
+            "The tokenization failed. Please contact the support.",
+            "ERROR",
+            enums.NotificationType.TOKEN_CREATION_DONE.value,
+        )
+        general.commit()
+        send_notification_created(project_id, user_id, False)
+        send_websocket_update(
+            project_id, False, ["docbin", "state", str(tokenization_task.state)]
+        )
+```
+
+**Async operations with daemon:**
+```python
+from submodules.model import daemon
+
+def start_tokenization_task(
+    project_id: str,
+    user_id: str,
+    type: str,
+    include_rats: bool = True,
+    only_uploaded_attributes: bool = False,
+    attribute_id: Optional[str] = None,
+) -> int:
+    task = set_up_tokenization_task(
+        project_id, user_id, enums.RecordTokenizationScope.PROJECT.value
+    )
+    daemon.run_without_db_token(
+        tokenize_initial_project,
+        project_id,
+        user_id,
+        str(task.id),
+        initial_count,
+        only_uploaded_attributes,
+        include_rats,
+    )
+    return task.id
+```
+
+## Best Practices
+
+1. Single responsibility per function
+2. Always validate inputs
+3. Use type hints for all parameters
+4. Use `with_commit` parameter appropriately
+5. Use submodule business objects, never SQLAlchemy directly
+6. Keep business logic in controllers, not routes

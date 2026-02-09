@@ -1,0 +1,79 @@
+---
+description: Main guidelines and architecture overview for refinery-tokenizer
+alwaysApply: true
+---
+
+# Refinery Tokenizer Guidelines
+
+Tokenizer service guidelines ensuring consistency across API routes, controllers, handlers, and related code.
+
+## Overview
+
+The `refinery-tokenizer` is a FastAPI-based microservice that manages the creation and storage of spaCy tokens for text-based record attributes. It supports multiple language models and is used by the refinery-gateway service. The service handles tokenization tasks for projects, records, and calculated attributes, storing tokenized data as DocBin byte arrays.
+
+## Architecture
+
+The tokenizer service follows a layered architecture:
+
+- **FastAPI Routes** (`app.py`): HTTP endpoint definitions and request/response handling
+- **Controllers** (`controller/`): Business logic and orchestration layer for tokenization tasks
+- **Handlers** (`handler/`): Service-specific handlers for tokenizer configuration and operations
+- **Middleware** (`app.py`): Database session management middleware
+- **Submodules** (`submodules/`): Shared modules for models and S3 operations
+- **Utilities** (`misc/`): Helper functions, notifications, and shared utilities
+- **Request Models** (`request_classes.py`): Pydantic models for request validation
+
+## Guideline Files
+
+- **[submodules.mdc](./submodules.mdc)** - Rules for working with submodules
+- **[fastapi-routes.mdc](./fastapi-routes.mdc)** - Rules for FastAPI route definitions
+- **[controllers.mdc](./controllers.mdc)** - Rules for controller modules and business logic
+- **[middleware.mdc](./middleware.mdc)** - Rules for middleware and request processing
+- **[exceptions.mdc](./exceptions.mdc)** - Rules for exception handling and custom exceptions
+- **[api-models.mdc](./api-models.mdc)** - Rules for Pydantic models and request/response validation
+- **[utilities.mdc](./utilities.mdc)** - Rules for utility functions and helpers
+
+## General Principles
+
+1. **Separation of Concerns**: Routes handle HTTP, controllers contain business logic, handlers manage service operations, submodules handle data access
+2. **Type Safety**: Use type hints consistently, leverage Pydantic for validation
+3. **Consistency**: Follow established naming conventions and patterns
+4. **Performance**: Optimize tokenization for large batches using chunking and progress tracking
+5. **Error Handling**: Use appropriate HTTP status codes and consistent error responses
+6. **Submodule Integration**: Always check submodule rules before making changes to submodule code
+7. **Async Operations**: Use daemon.run_without_db_token for long-running tokenization tasks
+
+## Directory Structure
+
+```
+refinery-tokenizer/
+├── app.py                 # FastAPI application and route definitions
+├── request_classes.py     # Pydantic models for request validation
+├── controller/            # Business logic layer
+│   ├── tokenization_manager.py  # Tokenization orchestration
+│   ├── tokenizer.py              # Core tokenization logic
+│   ├── task_manager.py          # Task management
+│   ├── rats_manager.py          # Record attribute token statistics
+│   └── task_util.py             # Task utilities
+├── handler/               # Service-specific handlers
+│   ├── tokenizer_handler.py     # Tokenizer loading and management
+│   └── config_handler.py        # Configuration management
+├── misc/                 # Utility functions
+│   ├── util.py                  # General utilities
+│   ├── notification.py          # WebSocket notifications
+│   └── decorator.py             # Decorators
+├── submodules/           # Git submodules
+│   ├── model/            # Database models and business objects
+│   └── s3/               # S3 storage operations
+└── tests/                # Test files
+```
+
+## Quick Reference
+
+**Response Patterns**: Use `responses.PlainTextResponse()` or `responses.JSONResponse()` directly. Return status codes: `200` for success, `418` for tokenization errors, `500` for server errors.
+
+**Database Sessions**: Sessions managed by middleware in `app.py`. Use `general.get_ctx_token()` and `general.remove_and_refresh_session()` for session management.
+
+**Tokenization**: Use spaCy `DocBin` for storing tokenized data. Process records in chunks (typically 500 records) for performance.
+
+**Submodules**: Always check `submodules/{name}/.cursor/rules/` before modifying submodule code.

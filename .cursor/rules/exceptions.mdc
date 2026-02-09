@@ -1,0 +1,130 @@
+---
+description: Rules for exception handling and custom exceptions
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Exceptions Guidelines
+
+## Exception Locations
+
+**Submodule exceptions** (use these):
+```python
+from submodules.model.exceptions import EntityNotFoundException, EntityAlreadyExistsException
+```
+
+**Standard Python exceptions** (use for validation):
+- `ValueError` - Invalid input values
+- `Exception` - Generic errors (with descriptive messages)
+
+## Usage Patterns
+
+**Raising exceptions:**
+```python
+# Validation
+if not attribute_item:
+    raise Exception("Attribute does not exist.")
+
+if attribute_item.data_type != enums.DataTypes.TEXT.value:
+    raise Exception("Attribute is not of type text.")
+
+# Not found (from submodules)
+proj = project.get(project_id)
+if not proj:
+    raise EntityNotFoundException(f"Project {project_id} not found")
+
+# Configuration errors
+allowed_configs = get_config_value("spacy_downloads")
+if config_string not in allowed_configs:
+    raise ValueError(
+        f"Tried to get tokenizer ({config_string}) outside of configured ({allowed_configs})"
+    )
+```
+
+**Handling in controllers:**
+```python
+def tokenize_record(project_id: str, record_id: str) -> int:
+    try:
+        # Tokenization logic
+        return 200
+    except Exception:
+        __remove_from_priority_queue(project_id, record_id)
+        print(traceback.format_exc(), flush=True)
+        return 418  # Tokenization error status code
+```
+
+**Error handling in long-running tasks:**
+```python
+def tokenize_initial_project(
+    project_id: str,
+    user_id: str,
+    task_id: str,
+    initial_count: int,
+) -> None:
+    session_token = general.get_ctx_token()
+    try:
+        # Tokenization logic
+        pass
+    except Exception:
+        __handle_error(project_id, user_id, task_id)
+    finally:
+        general.remove_and_refresh_session(session_token)
+
+def __handle_error(project_id: str, user_id: str, task_id: str) -> None:
+    try:
+        general.rollback()
+    except Exception:
+        print("couldn't rollback session", flush=True)
+    
+    project_item = project.get(project_id)
+    if (
+        project_item is not None
+        and project_item.status != enums.ProjectStatus.IN_DELETION.value
+    ):
+        tokenization_task = tokenization.get(project_id, task_id)
+        print(traceback.format_exc(), flush=True)
+        tokenization_task.state = enums.TokenizerTask.STATE_FAILED.value
+        notification.create(
+            project_id,
+            user_id,
+            "The tokenization failed. Please contact the support.",
+            "ERROR",
+            enums.NotificationType.TOKEN_CREATION_DONE.value,
+        )
+        general.commit()
+        send_notification_created(project_id, user_id, False)
+```
+
+## HTTP Status Code Mapping
+
+- `200`: Success
+- `418`: Tokenization errors (I'm a teapot - used for tokenization failures)
+- `500`: Server errors (database connection failures, configuration errors)
+
+## Error Logging
+
+Always log exceptions with traceback:
+
+```python
+import traceback
+
+try:
+    # Operation
+    pass
+except Exception:
+    print(traceback.format_exc(), flush=True)
+    # Handle error
+```
+
+## Best Practices
+
+1. Use `EntityNotFoundException` from submodules for not-found cases
+2. Use `ValueError` for invalid input values
+3. Use generic `Exception` with descriptive messages for business logic errors
+4. Always log exceptions with `traceback.format_exc()` before handling
+5. Use `flush=True` in print statements for immediate logging
+6. Handle errors gracefully in long-running tasks - update task state, send notifications
+7. Check project status before error handling (project might be deleted)
+8. Always rollback database transactions on error
+9. Return appropriate status codes (200, 418, 500) from route handlers
+10. Don't swallow exceptions silently - always log or handle appropriately

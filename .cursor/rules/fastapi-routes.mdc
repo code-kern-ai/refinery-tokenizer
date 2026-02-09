@@ -1,0 +1,137 @@
+---
+description: Rules for FastAPI route definitions and HTTP handling
+globs: ["app.py"]
+alwaysApply: true
+---
+
+# FastAPI Routes Guidelines
+
+Routes handle HTTP request/response logic. All routes are defined directly in `app.py`. Keep routes thin - validate input, call controllers, format responses.
+
+## Route Structure
+
+```python
+from fastapi import FastAPI, responses, status
+from controller import tokenization_manager, task_manager
+from request_classes import Request, AttributeTokenizationRequest
+
+app = FastAPI(title="refinery-tokenizer")
+
+@app.post("/tokenize_record")
+def tokenize_record(request: Request) -> responses.PlainTextResponse:
+    tokenization_manager.tokenize_record(request.project_id, request.record_id)
+    return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
+
+@app.post("/tokenize_calculated_attribute")
+def tokenize_calculated_attribute(
+    request: AttributeTokenizationRequest,
+) -> responses.JSONResponse:
+    record_tokenization_task_id = task_manager.start_tokenization_task(
+        request.project_id,
+        request.user_id,
+        enums.TokenizationTaskTypes.ATTRIBUTE.value,
+        request.include_rats,
+        False,
+        request.attribute_id,
+    )
+    return responses.JSONResponse(
+        content={"tokenization_task_id": str(record_tokenization_task_id)},
+        status_code=status.HTTP_200_OK,
+    )
+```
+
+## Response Patterns
+
+```python
+from fastapi import responses, status
+
+# Plain text response (success)
+@app.post("/tokenize_record")
+def tokenize_record(request: Request) -> responses.PlainTextResponse:
+    tokenization_manager.tokenize_record(request.project_id, request.record_id)
+    return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
+
+# JSON response with data
+@app.post("/tokenize_project")
+def tokenize_project(request: Request) -> responses.JSONResponse:
+    record_tokenization_task_id = task_manager.start_tokenization_task(
+        request.project_id,
+        request.user_id,
+        enums.TokenizationTaskTypes.PROJECT.value,
+        request.include_rats,
+        request.only_uploaded_attributes,
+    )
+    return responses.JSONResponse(
+        content={"tokenization_task_id": str(record_tokenization_task_id)},
+        status_code=status.HTTP_200_OK,
+    )
+
+# Health check with conditional status
+@app.get("/healthcheck")
+def healthcheck() -> responses.PlainTextResponse:
+    text = ""
+    status_code = status.HTTP_200_OK
+    database_test = general.test_database_connection()
+    if not database_test.get("success"):
+        error_name = database_test.get("error")
+        text += f"database_error:{error_name}:"
+        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    if not text:
+        text = "OK"
+    return responses.PlainTextResponse(text, status_code=status_code)
+```
+
+## Request Parameters
+
+```python
+# Request body (Pydantic model)
+from request_classes import Request, AttributeTokenizationRequest
+
+@app.post("/tokenize_record")
+def tokenize_record(request: Request):
+    pass
+
+# Path parameters
+@app.put("/tokenize_project_for_migration/{project_id}")
+def tokenize_project_no_use(project_id: str) -> responses.PlainTextResponse:
+    user_id = util.get_migration_user()
+    status_code = task_manager.start_tokenization_task(
+        project_id, user_id, enums.TokenizationTaskTypes.PROJECT.value
+    )
+    return responses.PlainTextResponse(status_code=status_code)
+
+# No parameters
+@app.put("/config_changed")
+def config_changed() -> responses.PlainTextResponse:
+    config_handler.refresh_config()
+    return responses.PlainTextResponse(status_code=status.HTTP_200_OK)
+```
+
+## Error Handling
+
+Routes typically don't catch exceptions - let FastAPI handle them. Controllers handle business logic errors:
+
+```python
+@app.post("/tokenize_record")
+def tokenize_record(request: Request) -> responses.PlainTextResponse:
+    # Controller handles errors internally and returns status codes
+    result = tokenization_manager.tokenize_record(request.project_id, request.record_id)
+    return responses.PlainTextResponse(status_code=result)  # Returns 200 or 418
+```
+
+## Status Codes
+
+- `200`: Successful operation
+- `418`: Tokenization error (I'm a teapot - used for tokenization failures)
+- `500`: Server error (database connection failures, etc.)
+
+## Best Practices
+
+1. Keep routes thin - delegate to controllers
+2. Use explicit return types (`responses.PlainTextResponse`, `responses.JSONResponse`)
+3. Use `status.HTTP_*` constants for status codes
+4. Use type hints for all parameters
+5. Import request classes from `request_classes`
+6. Use descriptive endpoint names: `/tokenize_record`, `/create_rats`, `/save_tokenizer`
+7. Return appropriate response types based on endpoint purpose
+8. Health checks should test critical dependencies (database)

@@ -220,7 +220,7 @@ pydantic-core==2.18.4
     # via
     #   -r requirements/common-requirements.txt
     #   pydantic
-pygments==2.19.2
+pygments==2.20.0
     # via rich
 python-dateutil==2.9.0.post0
     # via

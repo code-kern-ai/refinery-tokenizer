@@ -8,6 +8,7 @@ annotated-doc==0.0.4
     # via
     #   -r requirements/common-requirements.txt
     #   fastapi
+    #   typer
 annotated-types==0.7.0
     # via
     #   -r requirements/common-requirements.txt
@@ -59,7 +60,6 @@ click==8.3.1
     # via
     #   -r requirements/common-requirements.txt
     #   typer
-    #   typer-slim
     #   uvicorn
 cloudpathlib==0.23.0
     # via weasel
@@ -78,7 +78,7 @@ googleapis-common-protos==1.72.0
     # via
     #   -r requirements/common-requirements.txt
     #   opentelemetry-exporter-otlp-proto-grpc
-greenlet==3.3.1
+greenlet==3.3.2
     # via sqlalchemy
 grpcio==1.76.0
     # via
@@ -186,7 +186,7 @@ packaging==25.0
     #   weasel
 pandas==1.5.1
     # via -r requirements/common-requirements.txt
-preshed==3.0.12
+preshed==3.0.13
     # via
     #   spacy
     #   thinc
@@ -220,7 +220,7 @@ pydantic-core==2.18.4
     # via
     #   -r requirements/common-requirements.txt
     #   pydantic
-pygments==2.19.2
+pygments==2.20.0
     # via rich
 python-dateutil==2.9.0.post0
     # via
@@ -231,12 +231,12 @@ pytz==2025.2
     # via
     #   -r requirements/common-requirements.txt
     #   pandas
-requests==2.32.5
+requests==2.33.0
     # via
     #   -r requirements/common-requirements.txt
     #   spacy
     #   weasel
-rich==14.3.2
+rich==14.3.3
     # via typer
 s3transfer==0.13.1
     # via
@@ -248,7 +248,7 @@ six==1.17.0
     # via
     #   -r requirements/common-requirements.txt
     #   python-dateutil
-smart-open==7.5.0
+smart-open==7.5.1
     # via weasel
 sniffio==1.3.1
     # via
@@ -262,7 +262,7 @@ spacy-loggers==1.0.5
     # via spacy
 sqlalchemy==1.4.42
     # via -r requirements/common-requirements.txt
-srsly==2.5.2
+srsly==2.5.3
     # via
     #   confection
     #   spacy
@@ -282,9 +282,11 @@ thinc==8.2.5
     # via spacy
 tqdm==4.67.3
     # via spacy
-typer==0.21.1
-    # via spacy
-typer-slim==0.21.1
+typer==0.24.1
+    # via
+    #   spacy
+    #   typer-slim
+typer-slim==0.24.0
     # via weasel
 typing-extensions==4.15.0
     # via
@@ -300,8 +302,6 @@ typing-extensions==4.15.0
     #   pydantic
     #   pydantic-core
     #   starlette
-    #   typer
-    #   typer-slim
 urllib3==2.6.3
     # via
     #   -r requirements/common-requirements.txt

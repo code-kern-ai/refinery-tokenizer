@@ -23,6 +23,4 @@ RUN python -m spacy download de_core_news_sm
 
 COPY / .
 
-USER 65532:65532
-
 CMD ["/usr/local/bin/uvicorn", "--host", "0.0.0.0", "--port", "80", "app:app", "--reload"]

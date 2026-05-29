@@ -1,3 +1,2 @@
 -r common-requirements.txt
-spacy[ja]==3.7.5
-pydantic==2.7.4
+spacy[ja]==3.8.14

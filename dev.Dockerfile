@@ -1,10 +1,15 @@
-FROM kernai/refinery-parent-images:v2.5.0-common
+ARG PARENT_IMAGE=registry.dev.kern.ai/code-kern-ai/refinery-parent-images:dev-common
+FROM ${PARENT_IMAGE}
 
 WORKDIR /app
 
 VOLUME ["/app"]
 
-RUN apt-get update && apt-get install -y curl libc6-dev zlib1g gcc --no-install-recommends
+USER root
+
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y curl libc6-dev zlib1g gcc && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
@@ -18,4 +23,4 @@ RUN python -m spacy download de_core_news_sm
 
 COPY / .
 
-CMD [ "/usr/local/bin/uvicorn", "--host", "0.0.0.0", "--port", "80", "app:app", "--reload" ]
+CMD ["/usr/local/bin/uvicorn", "--host", "0.0.0.0", "--port", "80", "app:app", "--reload"]

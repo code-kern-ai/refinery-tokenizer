@@ -62,7 +62,6 @@ charset-normalizer==3.4.7
 click==8.4.0
     # via
     #   -r requirements/common-requirements.txt
-    #   typer
     #   uvicorn
 cloudpathlib==0.24.0
     # via weasel
@@ -82,7 +81,7 @@ googleapis-common-protos==1.75.0
     # via
     #   -r requirements/common-requirements.txt
     #   opentelemetry-exporter-otlp-proto-grpc
-greenlet==3.5.0
+greenlet==3.5.1
     # via sqlalchemy
 grpcio==1.80.0
     # via
@@ -280,9 +279,9 @@ sudachipy==0.6.11
     #   sudachidict-core
 thinc==8.3.13
     # via spacy
-tqdm==4.67.3
+tqdm==4.68.2
     # via spacy
-typer==0.25.1
+typer==0.26.7
     # via
     #   spacy
     #   weasel

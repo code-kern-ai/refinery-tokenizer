@@ -75,7 +75,7 @@ cymem==2.0.13
     #   preshed
     #   spacy
     #   thinc
-fastapi==0.142.2
+fastapi==0.136.3
     # via -r requirements/common-requirements.txt
 googleapis-common-protos==1.75.5
     # via
@@ -132,7 +132,6 @@ numpy==1.26.2
 opentelemetry-api==1.45.0
     # via
     #   -r requirements/common-requirements.txt
-    #   fastapi
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
